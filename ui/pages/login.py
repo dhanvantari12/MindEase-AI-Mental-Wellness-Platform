@@ -15,22 +15,24 @@ def show_login_page():
     st.title("👋 Welcome Back")
     st.caption("Continue your wellness journey.")
 
-    # Show success message after signup
+    # Show signup success message
     if st.session_state.get("signup_success"):
-        st.success("🎉 Account created successfully! Please login.")
+        st.success("🎉 Account created successfully!")
+        st.info("Please login using your email and password.")
         st.session_state.signup_success = False
 
-    # Email input
+    # Login inputs
     email = st.text_input(
         "📧 Email",
         placeholder="Enter your email",
+        key="login_email",
     )
 
-    # Password input
     password = st.text_input(
         "🔒 Password",
         type="password",
         placeholder="Enter your password",
+        key="login_password",
     )
 
     st.write("")
@@ -38,24 +40,44 @@ def show_login_page():
     # Login button
     if st.button("Login", use_container_width=True):
 
-        # Temporary debug
-        st.write("Email entered:", repr(email))
-        st.write("Password length:", len(password))
+        # Clean input
+        email = email.strip()
 
+        # Basic validation
+        if not email:
+            st.error("Please enter your email.")
+            return
+
+        if not password:
+            st.error("Please enter your password.")
+            return
+
+        # Authenticate user
         success, message, user = login_user(
-            email=email.strip(),
+            email=email,
             password=password,
         )
 
         if success:
+            # Store logged-in user
             login_session(user)
-            st.success("🎉 Login Successful!")
+
+            # Mark login state
+            st.session_state.logged_in = True
+            st.session_state.user_id = str(user.id)
+            st.session_state.user_name = user.full_name
+
+            st.success("🎉 Login successful!")
+
+            # Move to dashboard
             navigate("dashboard")
+
         else:
             st.error(message)
 
     st.write("")
 
+    # Navigation buttons
     col1, col2 = st.columns(2)
 
     with col1:

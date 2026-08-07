@@ -1,5 +1,5 @@
 import streamlit as st
-
+from ui.pages.mood import show_mood_page
 from ui.navigation import initialize_navigation
 
 
@@ -27,3 +27,6 @@ elif st.session_state.page == "signup":
 
 elif st.session_state.page == "dashboard":
     show_dashboard()
+
+elif st.session_state.page == "mood":
+    show_mood_page()

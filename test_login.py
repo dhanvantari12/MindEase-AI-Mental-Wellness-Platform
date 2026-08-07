@@ -1,7 +1,7 @@
 from features.auth.services import login_user
 
 success, message, user = login_user(
-    email="riza@gmail.com",
+    email="  RIZA@GMAIL.COM  ",
     password="Riza@1234"
 )
 
