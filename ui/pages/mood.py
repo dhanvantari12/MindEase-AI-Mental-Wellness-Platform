@@ -29,10 +29,6 @@ def show_mood_page():
     # ---------------------------------------------------------
 
     user_id = st.session_state.get("user_id")
-    user_name = st.session_state.get(
-        "user_name",
-        "there"
-    )
 
     # ---------------------------------------------------------
     # Page Header
@@ -95,7 +91,6 @@ def show_mood_page():
         "💾 Save Mood Check-in",
         use_container_width=True,
     ):
-
         mood_entry = create_mood(
             user_id=user_id,
             mood=mood_value,
@@ -137,7 +132,7 @@ def show_mood_page():
                 "Struggling": "😞",
             }.get(
                 mood_entry.mood,
-                "😊"
+                "😊",
             )
 
             st.markdown(
@@ -174,31 +169,76 @@ def show_mood_page():
     with mood_col1:
         st.metric(
             label="😄 Great",
-            value=weekly_counts["Great"],
+            value=weekly_counts.get("Great", 0),
         )
 
     with mood_col2:
         st.metric(
             label="🙂 Good",
-            value=weekly_counts["Good"],
+            value=weekly_counts.get("Good", 0),
         )
 
     with mood_col3:
         st.metric(
             label="😐 Okay",
-            value=weekly_counts["Okay"],
+            value=weekly_counts.get("Okay", 0),
         )
 
     with mood_col4:
         st.metric(
             label="😔 Low",
-            value=weekly_counts["Low"],
+            value=weekly_counts.get("Low", 0),
         )
 
     with mood_col5:
         st.metric(
             label="😞 Struggling",
-            value=weekly_counts["Struggling"],
+            value=weekly_counts.get("Struggling", 0),
+        )
+
+    # ---------------------------------------------------------
+    # Weekly Reflection
+    # ---------------------------------------------------------
+
+    total_checkins = sum(weekly_counts.values())
+
+    st.write("")
+
+    if total_checkins > 0:
+
+        most_frequent_mood = max(
+            weekly_counts,
+            key=weekly_counts.get,
+        )
+
+        mood_emojis = {
+            "Great": "😄",
+            "Good": "🙂",
+            "Okay": "😐",
+            "Low": "😔",
+            "Struggling": "😞",
+        }
+
+        mood_emoji = mood_emojis.get(
+            most_frequent_mood,
+            "😊",
+        )
+
+        st.info(
+            f"🌱 **Weekly Reflection**\n\n"
+            f"Your most frequent mood this week was "
+            f"**{mood_emoji} {most_frequent_mood}**.\n\n"
+            f"You've recorded **{total_checkins} mood "
+            f"check-ins** this week."
+        )
+
+    else:
+
+        st.info(
+            "🌱 **Weekly Reflection**\n\n"
+            "You haven't recorded any moods this week yet. "
+            "Check in with yourself to start building your "
+            "wellness history."
         )
 
     # ---------------------------------------------------------
