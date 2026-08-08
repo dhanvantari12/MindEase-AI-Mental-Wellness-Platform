@@ -7,22 +7,14 @@ import streamlit as st
 from features.mood.services import (
     create_mood,
     get_user_moods,
+    get_weekly_mood_counts,
 )
 from ui.navigation import navigate
 from utils.session import is_logged_in
 
 
-MOODS = {
-    "😄 Great": "Great",
-    "🙂 Good": "Good",
-    "😐 Okay": "Okay",
-    "😔 Low": "Low",
-    "😞 Struggling": "Struggling",
-}
-
-
 def show_mood_page():
-    """Display the Mood Tracker page."""
+    """Display the MindEase mood tracker page."""
 
     # ---------------------------------------------------------
     # Authentication check
@@ -32,10 +24,18 @@ def show_mood_page():
         st.error("Please login first.")
         return
 
+    # ---------------------------------------------------------
+    # Get current user
+    # ---------------------------------------------------------
+
     user_id = st.session_state.get("user_id")
+    user_name = st.session_state.get(
+        "user_name",
+        "there"
+    )
 
     # ---------------------------------------------------------
-    # Header
+    # Page Header
     # ---------------------------------------------------------
 
     st.title("😊 Mood Tracker")
@@ -52,42 +52,61 @@ def show_mood_page():
 
     st.subheader("How are you feeling right now?")
 
+    st.caption(
+        "There is no right or wrong answer. "
+        "Just choose what feels closest to how you feel."
+    )
+
+    mood_options = {
+        "😄 Great": "Great",
+        "🙂 Good": "Good",
+        "😐 Okay": "Okay",
+        "😔 Low": "Low",
+        "😞 Struggling": "Struggling",
+    }
+
     selected_mood = st.radio(
-        "Choose your mood",
-        options=list(MOODS.keys()),
+        "Select your mood",
+        options=list(mood_options.keys()),
         horizontal=True,
     )
 
-    st.write("")
+    mood_value = mood_options[selected_mood]
+
+    # ---------------------------------------------------------
+    # Mood Note
+    # ---------------------------------------------------------
 
     note = st.text_area(
         "What's on your mind?",
         placeholder=(
-            "You can write a little about how you're feeling..."
+            "You can write a few words about how you're feeling..."
         ),
         height=120,
     )
 
     st.write("")
 
+    # ---------------------------------------------------------
+    # Save Mood
+    # ---------------------------------------------------------
+
     if st.button(
-        "Save Mood Check-in",
+        "💾 Save Mood Check-in",
         use_container_width=True,
     ):
 
-        mood_value = MOODS[selected_mood]
-
-        create_mood(
+        mood_entry = create_mood(
             user_id=user_id,
             mood=mood_value,
             note=note,
         )
 
         st.success(
-            "🌸 Your mood has been recorded."
+            f"Your mood '{mood_entry.mood}' has been recorded. 💙"
         )
 
-        st.balloons()
+        st.rerun()
 
     # ---------------------------------------------------------
     # Mood History
@@ -102,7 +121,8 @@ def show_mood_page():
     if not moods:
 
         st.info(
-            "You haven't recorded any moods yet."
+            "You haven't recorded any moods yet. "
+            "Your check-ins will appear here."
         )
 
     else:
@@ -117,42 +137,78 @@ def show_mood_page():
                 "Struggling": "😞",
             }.get(
                 mood_entry.mood,
-                "😊",
+                "😊"
             )
 
-            with st.container():
+            st.markdown(
+                f"### {mood_emoji} {mood_entry.mood}"
+            )
 
-                col1, col2 = st.columns(
-                    [1, 5]
+            if mood_entry.note:
+                st.write(mood_entry.note)
+
+            st.caption(
+                mood_entry.created_at.strftime(
+                    "%d %B %Y, %I:%M %p"
                 )
+            )
 
-                with col1:
-                    st.markdown(
-                        f"# {mood_emoji}"
-                    )
-
-                with col2:
-
-                    st.markdown(
-                        f"**{mood_entry.mood}**"
-                    )
-
-                    if mood_entry.note:
-                        st.caption(
-                            mood_entry.note
-                        )
-
-                    st.caption(
-                        mood_entry.created_at.strftime(
-                            "%d %B %Y, %I:%M %p"
-                        )
-                    )
-
-                st.divider()
+            st.divider()
 
     # ---------------------------------------------------------
-    # Back Button
+    # Weekly Mood Summary
     # ---------------------------------------------------------
 
-    if st.button("← Back to Dashboard"):
+    st.subheader("📊 Your Mood This Week")
+
+    st.caption(
+        "A quick look at how you've been feeling this week."
+    )
+
+    weekly_counts = get_weekly_mood_counts(user_id)
+
+    mood_col1, mood_col2, mood_col3, mood_col4, mood_col5 = (
+        st.columns(5)
+    )
+
+    with mood_col1:
+        st.metric(
+            label="😄 Great",
+            value=weekly_counts["Great"],
+        )
+
+    with mood_col2:
+        st.metric(
+            label="🙂 Good",
+            value=weekly_counts["Good"],
+        )
+
+    with mood_col3:
+        st.metric(
+            label="😐 Okay",
+            value=weekly_counts["Okay"],
+        )
+
+    with mood_col4:
+        st.metric(
+            label="😔 Low",
+            value=weekly_counts["Low"],
+        )
+
+    with mood_col5:
+        st.metric(
+            label="😞 Struggling",
+            value=weekly_counts["Struggling"],
+        )
+
+    # ---------------------------------------------------------
+    # Back to Dashboard
+    # ---------------------------------------------------------
+
+    st.write("")
+
+    if st.button(
+        "← Back to Dashboard",
+        use_container_width=True,
+    ):
         navigate("dashboard")

@@ -4,7 +4,7 @@ Mood service for MindEase.
 Handles creating and retrieving mood check-ins.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
@@ -102,3 +102,58 @@ def get_today_mood(
         )
 
         return db.scalar(statement)
+
+def get_weekly_mood_counts(
+    user_id: str,
+) -> dict[str, int]:
+    """
+    Return the user's mood counts for the current week.
+
+    The week starts on Monday and ends on Sunday.
+    """
+
+    today = datetime.now().date()
+
+    # Monday = 0, Sunday = 6
+    start_of_week = (
+        today
+        - timedelta(days=today.weekday())
+    )
+
+    start_datetime = datetime.combine(
+        start_of_week,
+        datetime.min.time(),
+    )
+
+    end_datetime = datetime.combine(
+        today,
+        datetime.max.time(),
+    )
+
+    with get_db() as db:
+
+        statement = (
+            select(Mood.mood)
+            .where(
+                Mood.user_id == user_id,
+                Mood.created_at >= start_datetime,
+                Mood.created_at <= end_datetime,
+            )
+        )
+
+        moods = db.scalars(statement).all()
+
+    # Keep all mood categories even if their count is zero.
+    mood_counts = {
+        "Great": 0,
+        "Good": 0,
+        "Okay": 0,
+        "Low": 0,
+        "Struggling": 0,
+    }
+
+    for mood in moods:
+        if mood in mood_counts:
+            mood_counts[mood] += 1
+
+    return mood_counts
