@@ -7,7 +7,7 @@ import streamlit as st
 from ui.components.logout_button import logout_button
 from ui.navigation import navigate
 from utils.session import is_logged_in
-from features.mood.services import get_latest_mood
+from features.mood.services import get_today_mood
 
 
 def show_dashboard():
@@ -32,12 +32,12 @@ def show_dashboard():
     
     user_id = st.session_state.get("user_id")
 
-    latest_mood = get_latest_mood(user_id)
+    today_mood_entry = get_today_mood(user_id)
 
-    if latest_mood:
-      today_mood = latest_mood.mood
+    if today_mood_entry:
+       today_mood = today_mood_entry.mood
     else:
-      today_mood = "Not recorded"
+       today_mood = "Not recorded"
 
     # ---------------------------------------------------------
     # Page Header
