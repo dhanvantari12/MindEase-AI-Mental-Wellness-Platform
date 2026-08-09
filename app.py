@@ -1,7 +1,7 @@
 import streamlit as st
 from ui.pages.mood import show_mood_page
 from ui.navigation import initialize_navigation
-
+from ui.pages.journal import show_journal_page
 
 st.set_page_config(
     page_title="MindEase",
@@ -30,3 +30,6 @@ elif st.session_state.page == "dashboard":
 
 elif st.session_state.page == "mood":
     show_mood_page()
+    
+elif st.session_state.page == "journal":
+    show_journal_page()

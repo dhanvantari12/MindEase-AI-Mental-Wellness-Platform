@@ -10,6 +10,7 @@ from models.base import Base
 # Import all models so SQLAlchemy registers them
 from models.user import User  # noqa: F401
 from models.mood import Mood  # noqa: F401
+from models.journal import Journal
 
 
 def create_database() -> None:
