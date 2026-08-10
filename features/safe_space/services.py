@@ -1,35 +1,34 @@
 """
-AI service for MindEase Safe Space.
+Safe Space service for MindEase.
 
-Handles communication with the Gemini API.
+Handles:
+- Gemini AI responses
+- Saving conversation messages
+- Retrieving conversation history
+- Clearing conversation history
 """
 
 import os
 
 from dotenv import load_dotenv
 from google import genai
+from sqlalchemy import select
 
-
-# ---------------------------------------------------------
-# Load environment variables
-# ---------------------------------------------------------
+from database.session import get_db
+from models.conversation import Conversation
 
 load_dotenv()
 
-
 # ---------------------------------------------------------
-# Gemini configuration
+# Gemini Configuration
 # ---------------------------------------------------------
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-
 if not GEMINI_API_KEY:
-    raise RuntimeError(
-        "GEMINI_API_KEY is not configured. "
-        "Please add it to your .env file."
+    raise ValueError(
+        "GEMINI_API_KEY is not configured."
     )
-
 
 client = genai.Client(
     api_key=GEMINI_API_KEY
@@ -37,55 +36,45 @@ client = genai.Client(
 
 
 # ---------------------------------------------------------
-# System instructions
+# Safe Space System Instructions
 # ---------------------------------------------------------
 
 SYSTEM_INSTRUCTION = """
-You are MindEase, a supportive AI wellness companion.
+You are MindEase, a supportive AI mental wellness companion.
 
 Your role is to:
-- Listen without judgment.
-- Respond with empathy and warmth.
+- Listen empathetically.
+- Respond in a calm and supportive manner.
 - Encourage healthy reflection.
 - Help users explore their feelings.
-- Offer practical, gentle suggestions when appropriate.
-- Never claim to be a human therapist or doctor.
-- Never diagnose mental health conditions.
-- Never encourage harmful behavior.
+- Suggest practical and gentle coping strategies.
+- Never judge, shame, or dismiss the user's feelings.
 
-Keep responses conversational and reasonably concise.
+You are not a doctor, therapist, or emergency service.
+
+Do not claim to diagnose mental health conditions.
+Do not prescribe medication.
+Do not present yourself as a replacement for professional care.
 
 If a user appears to be in immediate danger or expresses
-intent to seriously hurt themselves or someone else,
-prioritize immediate safety and encourage them to contact
-local emergency services or a trusted person who can help
-them right now.
+thoughts of self-harm or suicide, encourage them to contact
+local emergency services or a qualified mental health
+professional immediately.
+
+Keep responses conversational, supportive, and reasonably concise.
 """
 
 
 # ---------------------------------------------------------
-# Generate AI response
+# Generate Gemini Response
 # ---------------------------------------------------------
 
 def generate_response(
     user_message: str,
 ) -> str:
     """
-    Generate a response from Gemini.
-
-    Parameters
-    ----------
-    user_message:
-        Message written by the user.
-
-    Returns
-    -------
-    str
-        Gemini's response.
+    Generate a supportive response using Gemini.
     """
-
-    if not user_message.strip():
-        return "Please write something first."
 
     try:
 
@@ -97,14 +86,108 @@ def generate_response(
             },
         )
 
-        if response.text:
-            return response.text
+        return response.text
 
-        return (
-            "I'm sorry, I couldn't generate a response "
-            "right now. Please try again."
+    except Exception as error:
+
+        print(
+            f"Gemini error: {error}"
         )
 
-    except Exception as e:
-        print("Gemini error:", type(e).__name__, str(e))
-        raise
+        return (
+            "I'm sorry, but I'm having trouble responding "
+            "right now. Please try again in a moment."
+        )
+
+
+# ---------------------------------------------------------
+# Save Conversation Message
+# ---------------------------------------------------------
+
+def save_message(
+    user_id: str,
+    role: str,
+    content: str,
+) -> Conversation:
+    """
+    Save a Safe Space conversation message
+    to the database.
+    """
+
+    message = Conversation(
+        user_id=user_id,
+        role=role,
+        content=content.strip(),
+    )
+
+    with get_db() as db:
+
+        db.add(message)
+
+        db.commit()
+
+        db.refresh(message)
+
+        return message
+
+
+# ---------------------------------------------------------
+# Get Conversation History
+# ---------------------------------------------------------
+
+def get_conversation(
+    user_id: str,
+) -> list[Conversation]:
+    """
+    Return all Safe Space messages for a user.
+
+    Messages are returned from oldest
+    to newest.
+    """
+
+    with get_db() as db:
+
+        statement = (
+            select(Conversation)
+            .where(
+                Conversation.user_id == user_id
+            )
+            .order_by(
+                Conversation.created_at.asc()
+            )
+        )
+
+        return list(
+            db.scalars(statement).all()
+        )
+
+
+# ---------------------------------------------------------
+# Clear Conversation
+# ---------------------------------------------------------
+
+def clear_conversation(
+    user_id: str,
+) -> None:
+    """
+    Delete all Safe Space messages
+    belonging to a user.
+    """
+
+    with get_db() as db:
+
+        statement = (
+            select(Conversation)
+            .where(
+                Conversation.user_id == user_id
+            )
+        )
+
+        messages = list(
+            db.scalars(statement).all()
+        )
+
+        for message in messages:
+            db.delete(message)
+
+        db.commit()
