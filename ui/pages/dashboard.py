@@ -149,11 +149,9 @@ def show_dashboard():
         if st.button(
             "💡 Insights",
             use_container_width=True,
-            key="sidebar_insights",
+            key="dashboard_insights",
         ):
-            st.info(
-                "Insights are coming soon."
-            )
+            navigate("insights")
 
         # -----------------------------------------------------
         # Statistics
