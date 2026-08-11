@@ -1,24 +1,28 @@
 """
 Statistics page for MindEase.
 
-Displays wellness statistics based on
+Displays personal wellness statistics based on
 mood check-ins and journal activity.
 """
 
 import streamlit as st
+import pandas as pd
 
-from features.statistics.services import (
-    get_wellness_summary,
+from ui.navigation import navigate
+from utils.session import is_logged_in
+
+from features.mood.services import (
+    get_user_moods,
     get_weekly_mood_counts,
 )
 
-from ui.navigation import navigate
-from ui.components.logout_button import logout_button
-from utils.session import is_logged_in
+from features.journal.services import (
+    get_user_journal_entries,
+)
 
 
 def show_statistics_page():
-    """Display the MindEase statistics page."""
+    """Display the MindEase Statistics page."""
 
     # ---------------------------------------------------------
     # Authentication check
@@ -32,15 +36,21 @@ def show_statistics_page():
     # Current user
     # ---------------------------------------------------------
 
-    user_id = st.session_state.get(
-        "user_id"
-    )
+    user_id = st.session_state.get("user_id")
+
+    if not user_id:
+        st.error(
+            "User session not found. Please login again."
+        )
+        return
 
     # ---------------------------------------------------------
-    # Get statistics
+    # Load data
     # ---------------------------------------------------------
 
-    summary = get_wellness_summary(
+    moods = get_user_moods(user_id)
+
+    journal_entries = get_user_journal_entries(
         user_id
     )
 
@@ -55,8 +65,8 @@ def show_statistics_page():
     st.title("📊 Wellness Statistics")
 
     st.caption(
-        "Understand your wellness journey through "
-        "your mood and journal activity."
+        "Understand your wellness patterns through "
+        "your mood and journaling activity."
     )
 
     st.write("")
@@ -75,72 +85,59 @@ def show_statistics_page():
 
         st.divider()
 
-        # Dashboard
         if st.button(
             "🏠 Dashboard",
             use_container_width=True,
+            key="statistics_dashboard",
         ):
             navigate("dashboard")
 
-        # Safe Space
         if st.button(
             "💬 Safe Space",
             use_container_width=True,
+            key="statistics_safe_space",
         ):
             navigate("safe_space")
 
-        # Mood Tracker
         if st.button(
             "😊 Mood Tracker",
             use_container_width=True,
+            key="statistics_mood",
         ):
             navigate("mood")
 
-        # Journal
         if st.button(
             "📔 Journal",
             use_container_width=True,
+            key="statistics_journal",
         ):
             navigate("journal")
 
-        # Statistics
-        if st.button(
-            "📊 Statistics",
-            use_container_width=True,
-        ):
-            st.rerun()
-
         st.divider()
-
-        # Future features
-        if st.button(
-            "🔔 Reminders",
-            use_container_width=True,
-        ):
-            st.info(
-                "Reminders are coming soon."
-            )
 
         if st.button(
             "💡 Insights",
             use_container_width=True,
+            key="statistics_insights",
         ):
             st.info(
                 "Insights are coming soon."
             )
 
-        st.divider()
-
-        # Logout
-        logout_button()
+        if st.button(
+            "⚙️ Settings",
+            use_container_width=True,
+            key="statistics_settings",
+        ):
+            st.info(
+                "Settings are coming soon."
+            )
 
     # ---------------------------------------------------------
-    # Overview Metrics
+    # Summary Cards
     # ---------------------------------------------------------
 
-    st.subheader(
-        "🌱 Your Wellness Overview"
-    )
+    st.subheader("📌 Your Wellness Summary")
 
     col1, col2, col3 = st.columns(3)
 
@@ -148,57 +145,40 @@ def show_statistics_page():
     with col1:
 
         st.metric(
-            label="😊 Mood Check-ins",
-            value=summary[
-                "total_mood_checkins"
-            ],
+            "😊 Total Mood Check-ins",
+            len(moods),
         )
 
-    # Journal entries
+    # Total journal entries
     with col2:
 
         st.metric(
-            label="📔 Journal Entries",
-            value=summary[
-                "total_journal_entries"
-            ],
+            "📔 Journal Entries",
+            len(journal_entries),
         )
 
-    # Most frequent mood
+    # Most common mood
     with col3:
 
-        most_frequent_mood = (
-            summary[
-                "most_frequent_mood"
+        if moods:
+
+            mood_values = [
+                mood.mood
+                for mood in moods
             ]
-        )
 
-        if most_frequent_mood:
-
-            mood_emojis = {
-                "Great": "😄",
-                "Good": "🙂",
-                "Okay": "😐",
-                "Low": "😔",
-                "Struggling": "😞",
-            }
-
-            mood_display = (
-                mood_emojis.get(
-                    most_frequent_mood,
-                    "😊",
-                )
-                + " "
-                + most_frequent_mood
+            most_common_mood = max(
+                set(mood_values),
+                key=mood_values.count,
             )
 
         else:
 
-            mood_display = "No data"
+            most_common_mood = "Not recorded"
 
         st.metric(
-            label="💭 Most Frequent Mood",
-            value=mood_display,
+            "🌸 Most Common Mood",
+            most_common_mood,
         )
 
     st.write("")
@@ -206,71 +186,18 @@ def show_statistics_page():
     st.divider()
 
     # ---------------------------------------------------------
-    # Mood Distribution
+    # Weekly Mood Distribution
     # ---------------------------------------------------------
 
     st.subheader(
-        "😊 Mood Distribution"
+        "📅 This Week's Mood Distribution"
     )
 
-    st.caption(
-        "A breakdown of the moods you've recorded."
-    )
-
-    mood_distribution = summary[
-        "mood_distribution"
-    ]
-
-    if sum(
-        mood_distribution.values()
-    ) == 0:
-
-        st.info(
-            "No mood data available yet. "
-            "Start recording your moods to see "
-            "your statistics."
-        )
-
-    else:
-
-        mood_labels = list(
-            mood_distribution.keys()
-        )
-
-        mood_values = list(
-            mood_distribution.values()
-        )
-
-        chart_data = {
-            "Mood": mood_labels,
-            "Check-ins": mood_values,
-        }
-
-        st.bar_chart(
-            chart_data,
-            x="Mood",
-            y="Check-ins",
-        )
-
-    st.write("")
-
-    # ---------------------------------------------------------
-    # Weekly Mood Summary
-    # ---------------------------------------------------------
-
-    st.subheader(
-        "📅 This Week's Mood"
-    )
-
-    st.caption(
-        "Your mood check-ins from Monday until today."
-    )
-
-    weekly_total = sum(
+    total_weekly_moods = sum(
         weekly_counts.values()
     )
 
-    if weekly_total == 0:
+    if total_weekly_moods == 0:
 
         st.info(
             "No mood check-ins recorded this week yet."
@@ -278,76 +205,149 @@ def show_statistics_page():
 
     else:
 
-        weekly_chart_data = {
-            "Mood": list(
-                weekly_counts.keys()
-            ),
-            "Check-ins": list(
-                weekly_counts.values()
-            ),
-        }
+        weekly_df = pd.DataFrame(
+            {
+                "Mood": list(
+                    weekly_counts.keys()
+                ),
+                "Check-ins": list(
+                    weekly_counts.values()
+                ),
+            }
+        )
 
         st.bar_chart(
-            weekly_chart_data,
-            x="Mood",
-            y="Check-ins",
+            weekly_df.set_index("Mood")
         )
 
     st.write("")
 
     # ---------------------------------------------------------
-    # Mood Summary
+    # Overall Mood Distribution
+    # ---------------------------------------------------------
+
+    st.subheader(
+        "😊 Overall Mood Distribution"
+    )
+
+    if not moods:
+
+        st.info(
+            "Start recording your moods to see "
+            "your overall mood distribution."
+        )
+
+    else:
+
+        mood_counts = {}
+
+        for mood in moods:
+
+            mood_counts[mood.mood] = (
+                mood_counts.get(
+                    mood.mood,
+                    0,
+                )
+                + 1
+            )
+
+        mood_df = pd.DataFrame(
+            {
+                "Mood": list(
+                    mood_counts.keys()
+                ),
+                "Check-ins": list(
+                    mood_counts.values()
+                ),
+            }
+        )
+
+        st.bar_chart(
+            mood_df.set_index("Mood")
+        )
+
+    st.write("")
+
+    # ---------------------------------------------------------
+    # Journal Activity
+    # ---------------------------------------------------------
+
+    st.subheader(
+        "📔 Journal Activity"
+    )
+
+    if not journal_entries:
+
+        st.info(
+            "You haven't written any journal entries yet."
+        )
+
+    else:
+
+        st.success(
+            f"You have written "
+            f"**{len(journal_entries)}** "
+            f"journal entr"
+            f"{'y' if len(journal_entries) == 1 else 'ies'}."
+        )
+
+        st.caption(
+            "Writing regularly can help you reflect "
+            "on your thoughts and emotions."
+        )
+
+    st.write("")
+
+    # ---------------------------------------------------------
+    # Wellness Summary
     # ---------------------------------------------------------
 
     st.divider()
 
     st.subheader(
-        "🌿 Your Wellness Reflection"
+        "🕊️ Your Wellness Summary"
     )
 
-    if weekly_total == 0:
+    if not moods and not journal_entries:
 
         st.info(
-            "You haven't recorded a mood this week yet. "
-            "Take a moment to check in with yourself."
+            "Your wellness journey is just beginning. "
+            "Record a mood or write a journal entry "
+            "to start building your personal insights."
         )
 
     else:
 
-        weekly_most_frequent = max(
-            weekly_counts,
-            key=weekly_counts.get,
-        )
+        if total_weekly_moods > 0:
 
-        mood_emojis = {
-            "Great": "😄",
-            "Good": "🙂",
-            "Okay": "😐",
-            "Low": "😔",
-            "Struggling": "😞",
-        }
+            st.success(
+                f"🌱 You recorded "
+                f"**{total_weekly_moods}** "
+                f"mood check-in"
+                f"{'s' if total_weekly_moods != 1 else ''} "
+                f"this week."
+            )
 
-        emoji = mood_emojis.get(
-            weekly_most_frequent,
-            "😊",
-        )
+        if journal_entries:
 
-        st.success(
-            f"🌱 Your most frequent mood this week "
-            f"has been **{emoji} "
-            f"{weekly_most_frequent}**.\n\n"
-            f"You've recorded **{weekly_total} "
-            f"mood check-ins** this week."
-        )
+            st.info(
+                f"📔 You have "
+                f"**{len(journal_entries)}** "
+                f"journal entr"
+                f"{'ies' if len(journal_entries) != 1 else 'y'} "
+                f"to reflect on."
+            )
+
+    st.write("")
 
     # ---------------------------------------------------------
     # Back to Dashboard
     # ---------------------------------------------------------
 
-    st.write("")
-
     if st.button(
         "← Back to Dashboard",
         use_container_width=True,
+        key="statistics_back_dashboard",
     ):
+
         navigate("dashboard")

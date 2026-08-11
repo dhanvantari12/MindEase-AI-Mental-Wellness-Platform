@@ -162,13 +162,9 @@ def show_dashboard():
         if st.button(
             "📊 Statistics",
             use_container_width=True,
-            key="sidebar_statistics",
+            key="dashboard_statistics",
         ):
-            st.info(
-                "Statistics are coming soon."
-            )
-
-        st.divider()
+            navigate("statistics")
 
         # -----------------------------------------------------
         # Profile
