@@ -136,12 +136,9 @@ def show_dashboard():
         if st.button(
             "🔔 Reminders",
             use_container_width=True,
-            key="sidebar_reminders",
+            key="dashboard_reminders",
         ):
-            st.info(
-                "Reminders are coming soon."
-            )
-
+            navigate("reminders")
         # -----------------------------------------------------
         # Insights
         # -----------------------------------------------------

@@ -8,11 +8,13 @@ from database.database import engine
 from models.base import Base
 
 # Import all models so SQLAlchemy registers them
+
 from models.user import User  # noqa: F401
 from models.conversation import Conversation  # noqa: F401
 from models.mood import Mood  # noqa: F401
-from models.journal import Journal
+from models.journal import Journal  # noqa: F401
 from models.login_session import LoginSession  # noqa: F401
+from models.reminder import Reminder  # noqa: F401
 
 
 def create_database() -> None:
