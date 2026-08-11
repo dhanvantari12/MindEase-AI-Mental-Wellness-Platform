@@ -44,7 +44,7 @@ from ui.pages.dashboard import show_dashboard
 from ui.pages.mood import show_mood_page
 from ui.pages.journal import show_journal_page
 from ui.pages.safe_space import show_safe_space_page
-
+from ui.pages.statistics import show_statistics_page
 
 # ---------------------------------------------------------
 # Page Routing
@@ -83,3 +83,7 @@ elif st.session_state.page == "journal":
 elif st.session_state.page == "safe_space":
 
     show_safe_space_page()
+
+elif st.session_state.page == "statistics":
+
+    show_statistics_page()

@@ -22,9 +22,7 @@ def show_dashboard():
     # ---------------------------------------------------------
 
     if not is_logged_in():
-
         st.error("Please login first.")
-
         return
 
     # ---------------------------------------------------------
@@ -41,52 +39,38 @@ def show_dashboard():
     )
 
     if not user_id:
-
         st.error(
             "User session not found. Please login again."
         )
-
         return
 
     # ---------------------------------------------------------
     # Get today's mood
     # ---------------------------------------------------------
 
-    today_mood_entry = get_today_mood(
-        user_id
-    )
+    today_mood_entry = get_today_mood(user_id)
 
     if today_mood_entry:
-
         today_mood = today_mood_entry.mood
-
     else:
-
         today_mood = "Not recorded"
 
     # ---------------------------------------------------------
     # Get journal entries
     # ---------------------------------------------------------
 
-    journal_entries = get_user_journal_entries(
-        user_id
-    )
+    journal_entries = get_user_journal_entries(user_id)
 
-    journal_count = len(
-        journal_entries
-    )
+    journal_count = len(journal_entries)
 
     # ---------------------------------------------------------
     # Page Header
     # ---------------------------------------------------------
 
-    st.title(
-        "🌸 MindEase Dashboard"
-    )
+    st.title("🌸 MindEase Dashboard")
 
     st.caption(
-        "Your personal space for reflection, "
-        "wellness and growth."
+        "Your personal space for reflection, wellness and growth."
     )
 
     # ---------------------------------------------------------
@@ -95,112 +79,128 @@ def show_dashboard():
 
     with st.sidebar:
 
-        st.markdown(
-            "## 🌸 MindEase"
-        )
+        st.markdown("## 🌸 MindEase")
 
-        st.caption(
-            "Your wellness companion"
-        )
+        st.caption("Your wellness companion")
 
         st.divider()
 
+        # -----------------------------------------------------
         # Dashboard
+        # -----------------------------------------------------
 
         if st.button(
             "🏠 Dashboard",
             use_container_width=True,
+            key="sidebar_dashboard",
         ):
-
             navigate("dashboard")
 
+        # -----------------------------------------------------
         # Safe Space
+        # -----------------------------------------------------
 
         if st.button(
             "💬 Safe Space",
             use_container_width=True,
+            key="sidebar_safe_space",
         ):
-
             navigate("safe_space")
 
+        # -----------------------------------------------------
         # Mood Tracker
+        # -----------------------------------------------------
 
         if st.button(
             "😊 Mood Tracker",
             use_container_width=True,
+            key="sidebar_mood",
         ):
-
             navigate("mood")
 
+        # -----------------------------------------------------
         # Journal
+        # -----------------------------------------------------
 
         if st.button(
             "📔 Journal",
             use_container_width=True,
+            key="sidebar_journal",
         ):
-
             navigate("journal")
 
+        # -----------------------------------------------------
         # Reminders
+        # -----------------------------------------------------
 
         if st.button(
             "🔔 Reminders",
             use_container_width=True,
+            key="sidebar_reminders",
         ):
-
             st.info(
                 "Reminders are coming soon."
             )
 
+        # -----------------------------------------------------
         # Insights
+        # -----------------------------------------------------
 
         if st.button(
             "💡 Insights",
             use_container_width=True,
+            key="sidebar_insights",
         ):
-
             st.info(
                 "Insights are coming soon."
             )
 
+        # -----------------------------------------------------
         # Statistics
+        # -----------------------------------------------------
 
         if st.button(
             "📊 Statistics",
             use_container_width=True,
+            key="sidebar_statistics",
         ):
-
             st.info(
                 "Statistics are coming soon."
             )
 
         st.divider()
 
+        # -----------------------------------------------------
         # Profile
+        # -----------------------------------------------------
 
         if st.button(
             "👤 Profile",
             use_container_width=True,
+            key="sidebar_profile",
         ):
-
             st.info(
                 "Profile is coming soon."
             )
 
+        # -----------------------------------------------------
         # Settings
+        # -----------------------------------------------------
 
         if st.button(
             "⚙️ Settings",
             use_container_width=True,
+            key="sidebar_settings",
         ):
-
             st.info(
                 "Settings are coming soon."
             )
 
         st.divider()
 
+        # -----------------------------------------------------
         # Logout
+        # -----------------------------------------------------
 
         logout_button()
 
@@ -243,8 +243,8 @@ def show_dashboard():
         if st.button(
             "😄 Great",
             use_container_width=True,
+            key="mood_great",
         ):
-
             navigate("mood")
 
     with mood_col2:
@@ -252,8 +252,8 @@ def show_dashboard():
         if st.button(
             "🙂 Good",
             use_container_width=True,
+            key="mood_good",
         ):
-
             navigate("mood")
 
     with mood_col3:
@@ -261,8 +261,8 @@ def show_dashboard():
         if st.button(
             "😐 Okay",
             use_container_width=True,
+            key="mood_okay",
         ):
-
             navigate("mood")
 
     with mood_col4:
@@ -270,8 +270,8 @@ def show_dashboard():
         if st.button(
             "😔 Low",
             use_container_width=True,
+            key="mood_low",
         ):
-
             navigate("mood")
 
     with mood_col5:
@@ -279,8 +279,8 @@ def show_dashboard():
         if st.button(
             "😞 Struggling",
             use_container_width=True,
+            key="mood_struggling",
         ):
-
             navigate("mood")
 
     st.write("")
@@ -289,9 +289,7 @@ def show_dashboard():
     # Quick Actions
     # ---------------------------------------------------------
 
-    st.subheader(
-        "Quick Actions"
-    )
+    st.subheader("Quick Actions")
 
     col1, col2, col3 = st.columns(3)
 
@@ -303,9 +301,7 @@ def show_dashboard():
 
         st.markdown("### 💬")
 
-        st.markdown(
-            "#### Safe Space"
-        )
+        st.markdown("#### Safe Space")
 
         st.caption(
             "Talk freely about what's on your mind."
@@ -314,8 +310,8 @@ def show_dashboard():
         if st.button(
             "Start Conversation",
             use_container_width=True,
+            key="quick_safe_space",
         ):
-
             navigate("safe_space")
 
     # ---------------------------------------------------------
@@ -326,9 +322,7 @@ def show_dashboard():
 
         st.markdown("### 📔")
 
-        st.markdown(
-            "#### Journal"
-        )
+        st.markdown("#### Journal")
 
         st.caption(
             "Write down your thoughts and feelings."
@@ -337,8 +331,8 @@ def show_dashboard():
         if st.button(
             "Open Journal",
             use_container_width=True,
+            key="quick_journal",
         ):
-
             navigate("journal")
 
     # ---------------------------------------------------------
@@ -349,9 +343,7 @@ def show_dashboard():
 
         st.markdown("### 😊")
 
-        st.markdown(
-            "#### Mood Tracker"
-        )
+        st.markdown("#### Mood Tracker")
 
         st.caption(
             "Track how your mood changes over time."
@@ -360,8 +352,8 @@ def show_dashboard():
         if st.button(
             "Track Mood",
             use_container_width=True,
+            key="quick_mood",
         ):
-
             navigate("mood")
 
     st.write("")
@@ -379,7 +371,6 @@ def show_dashboard():
     col1, col2, col3 = st.columns(3)
 
     # Today's Mood
-
     with col1:
 
         st.metric(
@@ -388,7 +379,6 @@ def show_dashboard():
         )
 
     # Journal Entries
-
     with col2:
 
         st.metric(
@@ -397,7 +387,6 @@ def show_dashboard():
         )
 
     # Wellness Streak
-
     with col3:
 
         st.metric(
