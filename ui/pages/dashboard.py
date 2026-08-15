@@ -10,6 +10,7 @@ from utils.session import is_logged_in
 
 from features.mood.services import get_today_mood
 from features.journal.services import get_user_journal_entries
+from features.wellness.services import get_wellness_streak
 
 
 def show_dashboard():
@@ -376,14 +377,16 @@ def show_dashboard():
         )
 
     # Wellness Streak
+    wellness_streak = get_wellness_streak(
+    user_id
+)
+
     with col3:
 
         st.metric(
-            label="🔥 Wellness Streak",
-            value="0 days",
+        label="🔥 Wellness Streak",
+        value=f"{wellness_streak} days",
         )
-
-    st.write("")
 
     # ---------------------------------------------------------
     # Recent Activity
