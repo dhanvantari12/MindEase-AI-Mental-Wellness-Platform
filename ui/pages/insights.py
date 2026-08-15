@@ -1,8 +1,8 @@
 """
 Insights page for MindEase.
 
-Provides simple personalized wellness insights
-based on mood and journal activity.
+Displays personalized wellness insights based on
+mood and journal activity.
 """
 
 import streamlit as st
@@ -10,50 +10,61 @@ import streamlit as st
 from ui.navigation import navigate
 from utils.session import is_logged_in
 
-from features.mood.services import (
-    get_user_moods,
-    get_weekly_mood_counts,
-)
-
-from features.journal.services import (
-    get_user_journal_entries,
+from features.insights.services import (
+    get_mood_summary,
+    get_weekly_mood_summary,
+    get_journal_summary,
+    calculate_wellness_score,
+    generate_wellness_insights,
 )
 
 
 def show_insights_page():
-    """Display personalized wellness insights."""
+    """Display the MindEase Insights page."""
 
     # ---------------------------------------------------------
     # Authentication check
     # ---------------------------------------------------------
 
     if not is_logged_in():
+
         st.error("Please login first.")
+
         return
 
     # ---------------------------------------------------------
-    # Current user
+    # Get current user
     # ---------------------------------------------------------
 
     user_id = st.session_state.get("user_id")
 
     if not user_id:
+
         st.error(
             "User session not found. Please login again."
         )
+
         return
 
     # ---------------------------------------------------------
-    # Load user data
+    # Load insights data
     # ---------------------------------------------------------
 
-    moods = get_user_moods(user_id)
+    mood_summary = get_mood_summary(user_id)
 
-    journal_entries = get_user_journal_entries(
+    weekly_summary = get_weekly_mood_summary(
         user_id
     )
 
-    weekly_counts = get_weekly_mood_counts(
+    journal_summary = get_journal_summary(
+        user_id
+    )
+
+    wellness_score = calculate_wellness_score(
+        user_id
+    )
+
+    insights = generate_wellness_insights(
         user_id
     )
 
@@ -61,16 +72,334 @@ def show_insights_page():
     # Page Header
     # ---------------------------------------------------------
 
-    st.title("💡 Your Wellness Insights")
+    st.title("💡 Wellness Insights")
 
     st.caption(
-        "Small observations from your wellness journey."
+        "Understand your wellness habits through "
+        "your mood and journaling activity."
     )
 
     st.write("")
 
     # ---------------------------------------------------------
-    # Sidebar
+    # Wellness Score
+    # ---------------------------------------------------------
+
+    st.subheader("🌸 Your Wellness Score")
+
+    score_col1, score_col2, score_col3 = st.columns(3)
+
+    with score_col1:
+
+        st.metric(
+            label="Wellness Score",
+            value=f"{wellness_score}/100",
+        )
+
+    with score_col2:
+
+        st.metric(
+            label="Mood Check-ins",
+            value=mood_summary[
+                "total_checkins"
+            ],
+        )
+
+    with score_col3:
+
+        st.metric(
+            label="Journal Entries",
+            value=journal_summary[
+                "total_entries"
+            ],
+        )
+
+    st.write("")
+
+    # ---------------------------------------------------------
+    # Overall Progress Message
+    # ---------------------------------------------------------
+
+    if wellness_score >= 80:
+
+        st.success(
+            "🌟 Great job! You're actively engaging "
+            "with your wellness journey."
+        )
+
+    elif wellness_score >= 50:
+
+        st.info(
+            "🌱 You're making progress. Keep building "
+            "your wellness habits."
+        )
+
+    elif wellness_score > 0:
+
+        st.warning(
+            "💙 You're getting started. Small, "
+            "consistent steps can make a difference."
+        )
+
+    else:
+
+        st.info(
+            "🌱 Start recording your mood or writing "
+            "journal entries to build your wellness history."
+        )
+
+    st.divider()
+
+    # ---------------------------------------------------------
+    # Mood Insights
+    # ---------------------------------------------------------
+
+    st.subheader("😊 Mood Insights")
+
+    mood_col1, mood_col2, mood_col3 = st.columns(3)
+
+    with mood_col1:
+
+        st.metric(
+            label="Total Check-ins",
+            value=mood_summary[
+                "total_checkins"
+            ],
+        )
+
+    with mood_col2:
+
+        st.metric(
+            label="Most Common Mood",
+            value=(
+                mood_summary[
+                    "most_common_mood"
+                ]
+                or "None"
+            ),
+        )
+
+    with mood_col3:
+
+        st.metric(
+            label="Latest Mood",
+            value=(
+                mood_summary[
+                    "latest_mood"
+                ]
+                or "None"
+            ),
+        )
+
+    # ---------------------------------------------------------
+    # Mood Distribution
+    # ---------------------------------------------------------
+
+    mood_counts = mood_summary.get(
+        "mood_counts",
+        {},
+    )
+
+    if mood_counts:
+
+        st.write("### 📊 Mood Distribution")
+
+        for mood, count in mood_counts.items():
+
+            st.write(
+                f"**{mood}** — {count} check-in"
+                f"{'s' if count != 1 else ''}"
+            )
+
+            st.progress(
+                min(
+                    count
+                    / max(mood_counts.values()),
+                    1.0,
+                )
+            )
+
+    else:
+
+        st.info(
+            "No mood check-ins available yet."
+        )
+
+    st.divider()
+
+    # ---------------------------------------------------------
+    # Weekly Mood Summary
+    # ---------------------------------------------------------
+
+    st.subheader("📅 This Week")
+
+    weekly_col1, weekly_col2 = st.columns(2)
+
+    with weekly_col1:
+
+        st.metric(
+            label="This Week's Check-ins",
+            value=weekly_summary[
+                "total_checkins"
+            ],
+        )
+
+    with weekly_col2:
+
+        st.metric(
+            label="Most Common Mood",
+            value=(
+                weekly_summary[
+                    "most_common_mood"
+                ]
+                or "None"
+            ),
+        )
+
+    weekly_moods = weekly_summary.get(
+        "mood_counts",
+        {},
+    )
+
+    if weekly_moods:
+
+        st.write("### Weekly Mood Activity")
+
+        for mood, count in weekly_moods.items():
+
+            st.write(
+                f"**{mood}:** {count}"
+            )
+
+    else:
+
+        st.info(
+            "No mood activity recorded this week."
+        )
+
+    st.divider()
+
+    # ---------------------------------------------------------
+    # Journal Insights
+    # ---------------------------------------------------------
+
+    st.subheader("📔 Journal Insights")
+
+    st.metric(
+        label="Total Journal Entries",
+        value=journal_summary[
+            "total_entries"
+        ],
+    )
+
+    latest_entry = journal_summary.get(
+        "latest_entry"
+    )
+
+    if latest_entry:
+
+        # Your service currently returns the
+        # complete Journal object.
+
+        entry_title = getattr(
+            latest_entry,
+            "title",
+            "Untitled entry",
+        )
+
+        st.info(
+            f"📔 Latest journal entry: "
+            f"**{entry_title}**"
+        )
+
+    else:
+
+        st.info(
+            "No journal entries yet. "
+            "Start writing to reflect on your day."
+        )
+
+    st.divider()
+
+    # ---------------------------------------------------------
+    # Personalized Insights
+    # ---------------------------------------------------------
+
+    st.subheader(
+        "✨ Personalized Insights"
+    )
+
+    if insights:
+
+        for insight in insights:
+
+            st.info(insight)
+
+    else:
+
+        st.info(
+            "🌱 Keep using MindEase to receive "
+            "personalized wellness insights."
+        )
+
+    st.divider()
+
+    # ---------------------------------------------------------
+    # Quick Actions
+    # ---------------------------------------------------------
+
+    st.subheader(
+        "🌱 Continue Your Wellness Journey"
+    )
+
+    action_col1, action_col2, action_col3 = (
+        st.columns(3)
+    )
+
+    with action_col1:
+
+        if st.button(
+            "😊 Record Mood",
+            use_container_width=True,
+            key="insights_record_mood",
+        ):
+
+            navigate("mood")
+
+    with action_col2:
+
+        if st.button(
+            "📔 Open Journal",
+            use_container_width=True,
+            key="insights_open_journal",
+        ):
+
+            navigate("journal")
+
+    with action_col3:
+
+        if st.button(
+            "💬 Safe Space",
+            use_container_width=True,
+            key="insights_open_safe_space",
+        ):
+
+            navigate("safe_space")
+
+    st.write("")
+
+    # ---------------------------------------------------------
+    # Disclaimer
+    # ---------------------------------------------------------
+
+    st.caption(
+        "💙 MindEase insights are intended for "
+        "self-reflection and wellness engagement. "
+        "They are not a medical diagnosis."
+    )
+
+    # ---------------------------------------------------------
+    # Sidebar Navigation
     # ---------------------------------------------------------
 
     with st.sidebar:
@@ -86,335 +415,77 @@ def show_insights_page():
         if st.button(
             "🏠 Dashboard",
             use_container_width=True,
-            key="insights_dashboard",
+            key="insights_sidebar_dashboard",
         ):
+
             navigate("dashboard")
 
         if st.button(
             "💬 Safe Space",
             use_container_width=True,
-            key="insights_safe_space",
+            key="insights_sidebar_safe_space",
         ):
+
             navigate("safe_space")
 
         if st.button(
             "😊 Mood Tracker",
             use_container_width=True,
-            key="insights_mood",
+            key="insights_sidebar_mood",
         ):
+
             navigate("mood")
 
         if st.button(
             "📔 Journal",
             use_container_width=True,
-            key="insights_journal",
+            key="insights_sidebar_journal",
         ):
+
             navigate("journal")
+
+        if st.button(
+            "🔔 Reminders",
+            use_container_width=True,
+            key="insights_sidebar_reminders",
+        ):
+
+            navigate("reminders")
+
+        if st.button(
+            "💡 Insights",
+            use_container_width=True,
+            key="insights_sidebar_insights",
+        ):
+
+            st.rerun()
 
         if st.button(
             "📊 Statistics",
             use_container_width=True,
-            key="insights_statistics",
+            key="insights_sidebar_statistics",
         ):
+
             navigate("statistics")
 
         st.divider()
 
         if st.button(
-            "🔔 Reminders",
+            "👤 Profile",
             use_container_width=True,
-            key="insights_reminders",
+            key="insights_sidebar_profile",
         ):
+
             st.info(
-                "Reminders are coming soon."
+                "Profile is coming soon."
             )
 
-    # ---------------------------------------------------------
-    # No Data State
-    # ---------------------------------------------------------
-
-    if not moods and not journal_entries:
-
-        st.info(
-            "🌱 Your insights will appear here as "
-            "you start using MindEase."
-        )
-
-        st.write("")
-
-        st.markdown(
-            """
-            ### Start your wellness journey
-
-            You can begin by:
-
-            - 😊 Recording your mood
-            - 📔 Writing a journal entry
-            - 💬 Talking in Safe Space
-
-            The more you use MindEase, the more useful
-            your personal insights can become.
-            """
-        )
-
-        st.write("")
-
         if st.button(
-            "😊 Record Today's Mood",
+            "⚙️ Settings",
             use_container_width=True,
-            key="insights_start_mood",
+            key="insights_sidebar_settings",
         ):
-            navigate("mood")
 
-        return
-
-    # ---------------------------------------------------------
-    # Mood Analysis
-    # ---------------------------------------------------------
-
-    st.subheader("😊 Mood Insights")
-
-    mood_values = [
-        mood.mood
-        for mood in moods
-    ]
-
-    mood_counts = {}
-
-    for mood in mood_values:
-
-        mood_counts[mood] = (
-            mood_counts.get(mood, 0) + 1
-        )
-
-    # Most common mood
-    most_common_mood = max(
-        mood_counts,
-        key=mood_counts.get,
-    )
-
-    most_common_count = mood_counts[
-        most_common_mood
-    ]
-
-    st.success(
-        f"🌸 Your most frequently recorded mood "
-        f"is **{most_common_mood}** "
-        f"({most_common_count} check-in"
-        f"{'s' if most_common_count != 1 else ''})."
-    )
-
-    # ---------------------------------------------------------
-    # Positive / Negative Mood Analysis
-    # ---------------------------------------------------------
-
-    positive_moods = {
-        "Great",
-        "Good",
-    }
-
-    challenging_moods = {
-        "Low",
-        "Struggling",
-    }
-
-    positive_count = sum(
-        1
-        for mood in mood_values
-        if mood in positive_moods
-    )
-
-    challenging_count = sum(
-        1
-        for mood in mood_values
-        if mood in challenging_moods
-    )
-
-    if positive_count > challenging_count:
-
-        st.info(
-            "🌱 You have recorded more positive "
-            "moods than challenging moods. "
-            "That's a good pattern to notice."
-        )
-
-    elif challenging_count > positive_count:
-
-        st.warning(
-            "💙 You have recorded more challenging "
-            "moods recently. Consider giving yourself "
-            "some extra time for rest and reflection."
-        )
-
-    else:
-
-        st.info(
-            "🌿 Your mood pattern is fairly balanced. "
-            "Keep checking in with yourself."
-        )
-
-    # ---------------------------------------------------------
-    # Weekly Insight
-    # ---------------------------------------------------------
-
-    st.write("")
-
-    st.subheader(
-        "📅 This Week"
-    )
-
-    weekly_total = sum(
-        weekly_counts.values()
-    )
-
-    if weekly_total == 0:
-
-        st.info(
-            "No mood check-ins have been recorded "
-            "this week yet."
-        )
-
-    else:
-
-        weekly_mood = max(
-            weekly_counts,
-            key=weekly_counts.get,
-        )
-
-        weekly_mood_count = weekly_counts[
-            weekly_mood
-        ]
-
-        st.info(
-            f"📊 You recorded **{weekly_total}** "
-            f"mood check-in"
-            f"{'s' if weekly_total != 1 else ''} "
-            f"this week. Your most common mood was "
-            f"**{weekly_mood}**."
-        )
-
-        if weekly_mood_count >= 3:
-
-            st.success(
-                f"🌱 **{weekly_mood}** appeared "
-                f"{weekly_mood_count} times this week."
+            st.info(
+                "Settings are coming soon."
             )
-
-    # ---------------------------------------------------------
-    # Journaling Insight
-    # ---------------------------------------------------------
-
-    st.write("")
-
-    st.subheader(
-        "📔 Journaling Insight"
-    )
-
-    journal_count = len(
-        journal_entries
-    )
-
-    if journal_count == 0:
-
-        st.info(
-            "You haven't written a journal entry yet. "
-            "Try writing down what's on your mind."
-        )
-
-    elif journal_count == 1:
-
-        st.success(
-            "📔 You've written your first journal entry. "
-            "Keep using your journal as a private space "
-            "for reflection."
-        )
-
-    else:
-
-        st.success(
-            f"📔 You've written **{journal_count}** "
-            f"journal entries. Regular reflection can "
-            f"help you notice patterns in your thoughts "
-            f"and feelings."
-        )
-
-    # ---------------------------------------------------------
-    # Wellness Recommendation
-    # ---------------------------------------------------------
-
-    st.write("")
-
-    st.subheader(
-        "🌱 A Small Suggestion"
-    )
-
-    if challenging_count > positive_count:
-
-        st.warning(
-            "💙 You've had some challenging mood "
-            "check-ins. Consider taking a short break, "
-            "writing in your journal, or talking in "
-            "Safe Space about what's on your mind."
-        )
-
-    elif journal_count == 0:
-
-        st.info(
-            "📔 Try writing a short journal entry today. "
-            "It doesn't have to be long — even a few "
-            "sentences can help you reflect."
-        )
-
-    elif weekly_total == 0:
-
-        st.info(
-            "😊 Try recording your mood today. "
-            "Consistent check-ins help MindEase "
-            "understand your wellness patterns."
-        )
-
-    else:
-
-        st.success(
-            "🌸 You're actively checking in with "
-            "yourself. Keep building the habit of "
-            "reflection and self-awareness."
-        )
-
-    # ---------------------------------------------------------
-    # Important Note
-    # ---------------------------------------------------------
-
-    st.write("")
-
-    st.caption(
-        "💙 These insights are based on your MindEase "
-        "activity and are intended for self-reflection, "
-        "not medical diagnosis."
-    )
-
-    st.write("")
-
-    # ---------------------------------------------------------
-    # Navigation
-    # ---------------------------------------------------------
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        if st.button(
-            "← Dashboard",
-            use_container_width=True,
-            key="insights_back_dashboard",
-        ):
-            navigate("dashboard")
-
-    with col2:
-
-        if st.button(
-            "📊 View Statistics",
-            use_container_width=True,
-            key="insights_view_statistics",
-        ):
-            navigate("statistics")
