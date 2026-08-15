@@ -2,7 +2,8 @@
 Safe Space page for MindEase.
 
 Provides a supportive AI conversation interface
-with persistent conversation history.
+with persistent conversation history and
+personalized AI companion name.
 """
 
 import streamlit as st
@@ -13,6 +14,8 @@ from features.safe_space.services import (
     get_conversation,
     clear_conversation,
 )
+
+from features.preferences.services import get_ai_name
 
 from ui.navigation import navigate
 from utils.session import is_logged_in
@@ -38,17 +41,28 @@ def show_safe_space_page():
     user_id = st.session_state.get("user_id")
 
     if not user_id:
-        st.error("User session not found. Please login again.")
+        st.error(
+            "User session not found. Please login again."
+        )
         return
+
+    # ---------------------------------------------------------
+    # Get personalized AI companion name
+    # ---------------------------------------------------------
+
+    ai_name = get_ai_name(user_id) or "MindEase"
 
     # ---------------------------------------------------------
     # Page Header
     # ---------------------------------------------------------
 
-    st.title("💬 Safe Space")
+    st.title(
+        f"💬 Safe Space with {ai_name}"
+    )
 
     st.caption(
-        "A calm space where you can talk, reflect, and be heard."
+        f"A calm space where you can talk, reflect, "
+        f"and be heard by {ai_name}."
     )
 
     st.write("")
@@ -66,9 +80,10 @@ def show_safe_space_page():
     if not messages:
 
         st.info(
-            "🌸 Welcome to Safe Space.\n\n"
-            "You can talk about what's on your mind. "
-            "I'm here to listen without judgment."
+            f"🌸 Welcome to Safe Space.\n\n"
+            f"I'm {ai_name}, your personal wellness "
+            f"companion. I'm here to listen without "
+            f"judgment."
         )
 
     # ---------------------------------------------------------
@@ -116,20 +131,22 @@ def show_safe_space_page():
         with st.chat_message("assistant"):
 
             with st.spinner(
-                "MindEase is thinking..."
+                f"{ai_name} is thinking..."
             ):
 
                 try:
 
                     response = generate_response(
-                        user_message
+                        user_message,
+                        ai_name=ai_name,
                     )
 
                 except Exception as error:
 
                     response = (
-                        "I'm sorry, I couldn't process that "
-                        "right now. Please try again in a moment."
+                        "I'm sorry, I couldn't process "
+                        "that right now. Please try again "
+                        "in a moment."
                     )
 
                     st.error(
@@ -154,10 +171,12 @@ def show_safe_space_page():
 
     with st.sidebar:
 
-        st.markdown("## 🌸 MindEase")
+        st.markdown(
+            "## 🌸 MindEase"
+        )
 
         st.caption(
-            "Your wellness companion"
+            f"Your wellness companion: {ai_name}"
         )
 
         st.divider()
@@ -169,6 +188,7 @@ def show_safe_space_page():
         if st.button(
             "🏠 Dashboard",
             use_container_width=True,
+            key="safe_space_sidebar_dashboard",
         ):
 
             navigate("dashboard")
@@ -180,6 +200,7 @@ def show_safe_space_page():
         if st.button(
             "💬 Safe Space",
             use_container_width=True,
+            key="safe_space_sidebar_safe_space",
         ):
 
             navigate("safe_space")
@@ -191,6 +212,7 @@ def show_safe_space_page():
         if st.button(
             "😊 Mood Tracker",
             use_container_width=True,
+            key="safe_space_sidebar_mood",
         ):
 
             navigate("mood")
@@ -202,9 +224,72 @@ def show_safe_space_page():
         if st.button(
             "📔 Journal",
             use_container_width=True,
+            key="safe_space_sidebar_journal",
         ):
 
             navigate("journal")
+
+        # -----------------------------------------------------
+        # Reminders
+        # -----------------------------------------------------
+
+        if st.button(
+            "🔔 Reminders",
+            use_container_width=True,
+            key="safe_space_sidebar_reminders",
+        ):
+
+            navigate("reminders")
+
+        # -----------------------------------------------------
+        # Insights
+        # -----------------------------------------------------
+
+        if st.button(
+            "💡 Insights",
+            use_container_width=True,
+            key="safe_space_sidebar_insights",
+        ):
+
+            navigate("insights")
+
+        # -----------------------------------------------------
+        # Statistics
+        # -----------------------------------------------------
+
+        if st.button(
+            "📊 Statistics",
+            use_container_width=True,
+            key="safe_space_sidebar_statistics",
+        ):
+
+            navigate("statistics")
+
+        st.divider()
+
+        # -----------------------------------------------------
+        # Profile
+        # -----------------------------------------------------
+
+        if st.button(
+            "👤 Profile",
+            use_container_width=True,
+            key="safe_space_sidebar_profile",
+        ):
+
+            navigate("profile")
+
+        # -----------------------------------------------------
+        # Settings
+        # -----------------------------------------------------
+
+        if st.button(
+            "⚙️ Settings",
+            use_container_width=True,
+            key="safe_space_sidebar_settings",
+        ):
+
+            navigate("settings")
 
         st.divider()
 
@@ -215,6 +300,7 @@ def show_safe_space_page():
         if st.button(
             "🗑️ Clear Conversation",
             use_container_width=True,
+            key="safe_space_clear_conversation",
         ):
 
             clear_conversation(user_id)
@@ -234,6 +320,18 @@ def show_safe_space_page():
         if st.button(
             "← Back to Dashboard",
             use_container_width=True,
+            key="safe_space_back_dashboard",
         ):
 
             navigate("dashboard")
+
+    # ---------------------------------------------------------
+    # Footer
+    # ---------------------------------------------------------
+
+    st.write("")
+
+    st.caption(
+        f"💙 {ai_name} is designed to support personal "
+        "wellness and self-reflection."
+    )

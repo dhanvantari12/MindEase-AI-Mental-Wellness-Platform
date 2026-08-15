@@ -6,18 +6,21 @@ Provides user preferences and account settings.
 
 import streamlit as st
 
-from ui.navigation import navigate
-from utils.session import is_logged_in
-from ui.components.logout_button import logout_button
-
 from features.preferences.services import (
     get_or_create_preferences,
     update_preferences,
+    update_ai_name,
 )
+
+from ui.navigation import navigate
+from ui.components.logout_button import logout_button
+from utils.session import is_logged_in
 
 
 def show_settings_page():
-    """Display the MindEase settings page."""
+    """
+    Display the MindEase settings page.
+    """
 
     # ---------------------------------------------------------
     # Authentication check
@@ -56,7 +59,7 @@ def show_settings_page():
         return
 
     # ---------------------------------------------------------
-    # Load preferences from database
+    # Load preferences
     # ---------------------------------------------------------
 
     preferences = get_or_create_preferences(
@@ -99,12 +102,42 @@ def show_settings_page():
             user_email
         )
 
-    st.write("")
+    st.divider()
+
+    # ---------------------------------------------------------
+    # AI Companion Section
+    # ---------------------------------------------------------
+
+    st.subheader("🤖 AI Companion")
+
+    st.caption(
+        "Give your AI wellness companion a name that feels "
+        "comfortable and personal."
+    )
+
+    current_ai_name = (
+        preferences.ai_name
+        if preferences.ai_name
+        else "MindEase"
+    )
+
+    ai_name = st.text_input(
+        "AI companion name",
+        value=current_ai_name,
+        max_chars=50,
+        key="settings_ai_name",
+        placeholder="e.g. Nova, Mira, Luna...",
+    )
+
+    st.caption(
+        "This name will be used by your AI companion "
+        "inside Safe Space."
+    )
 
     st.divider()
 
     # ---------------------------------------------------------
-    # Preference Form
+    # Wellness Preferences
     # ---------------------------------------------------------
 
     st.subheader(
@@ -172,11 +205,24 @@ def show_settings_page():
         key="settings_save_preferences",
     ):
 
+        # -----------------------------------------------------
+        # Save wellness preferences
+        # -----------------------------------------------------
+
         update_preferences(
             user_id=user_id,
             reminders_enabled=reminder_enabled,
             daily_checkin_enabled=daily_checkin,
             journal_prompts_enabled=journal_prompt,
+        )
+
+        # -----------------------------------------------------
+        # Save AI companion name
+        # -----------------------------------------------------
+
+        update_ai_name(
+            user_id=user_id,
+            ai_name=ai_name,
         )
 
         st.success(
@@ -188,29 +234,12 @@ def show_settings_page():
     st.divider()
 
     # ---------------------------------------------------------
-    # Security / Account
-    # ---------------------------------------------------------
-
-    st.subheader(
-        "🔐 Security"
-    )
-
-    st.info(
-        "Your account information and preferences "
-        "are securely stored in the MindEase database."
-    )
-
-    st.write("")
-
-    # ---------------------------------------------------------
     # Sidebar Navigation
     # ---------------------------------------------------------
 
     with st.sidebar:
 
-        st.markdown(
-            "## 🌸 MindEase"
-        )
+        st.markdown("## 🌸 MindEase")
 
         st.caption(
             "Your wellness companion"
@@ -218,7 +247,9 @@ def show_settings_page():
 
         st.divider()
 
+        # -----------------------------------------------------
         # Dashboard
+        # -----------------------------------------------------
 
         if st.button(
             "🏠 Dashboard",
@@ -228,7 +259,9 @@ def show_settings_page():
 
             navigate("dashboard")
 
+        # -----------------------------------------------------
         # Safe Space
+        # -----------------------------------------------------
 
         if st.button(
             "💬 Safe Space",
@@ -238,7 +271,9 @@ def show_settings_page():
 
             navigate("safe_space")
 
+        # -----------------------------------------------------
         # Mood Tracker
+        # -----------------------------------------------------
 
         if st.button(
             "😊 Mood Tracker",
@@ -248,7 +283,9 @@ def show_settings_page():
 
             navigate("mood")
 
+        # -----------------------------------------------------
         # Journal
+        # -----------------------------------------------------
 
         if st.button(
             "📔 Journal",
@@ -258,7 +295,9 @@ def show_settings_page():
 
             navigate("journal")
 
+        # -----------------------------------------------------
         # Reminders
+        # -----------------------------------------------------
 
         if st.button(
             "🔔 Reminders",
@@ -268,7 +307,9 @@ def show_settings_page():
 
             navigate("reminders")
 
+        # -----------------------------------------------------
         # Insights
+        # -----------------------------------------------------
 
         if st.button(
             "💡 Insights",
@@ -278,7 +319,9 @@ def show_settings_page():
 
             navigate("insights")
 
+        # -----------------------------------------------------
         # Statistics
+        # -----------------------------------------------------
 
         if st.button(
             "📊 Statistics",
@@ -290,7 +333,9 @@ def show_settings_page():
 
         st.divider()
 
+        # -----------------------------------------------------
         # Profile
+        # -----------------------------------------------------
 
         if st.button(
             "👤 Profile",
@@ -300,7 +345,9 @@ def show_settings_page():
 
             navigate("profile")
 
+        # -----------------------------------------------------
         # Settings
+        # -----------------------------------------------------
 
         if st.button(
             "⚙️ Settings",
@@ -312,7 +359,9 @@ def show_settings_page():
 
         st.divider()
 
+        # -----------------------------------------------------
         # Logout
+        # -----------------------------------------------------
 
         logout_button()
 

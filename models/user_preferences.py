@@ -1,10 +1,11 @@
 """
 User preferences model for MindEase.
 
-Stores personal application preferences for each user.
+Stores personal application preferences for each user,
+including the personalized AI companion name.
 """
 
-from sqlalchemy import Boolean, ForeignKey
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base_model import BaseModel
@@ -26,6 +27,16 @@ class UserPreferences(BaseModel):
         unique=True,
         nullable=False,
         index=True,
+    )
+
+    # ---------------------------------------------------------
+    # AI Companion
+    # ---------------------------------------------------------
+
+    ai_name: Mapped[str] = mapped_column(
+        String(50),
+        default="MindEase",
+        nullable=False,
     )
 
     # ---------------------------------------------------------

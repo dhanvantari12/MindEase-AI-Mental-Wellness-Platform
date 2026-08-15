@@ -49,6 +49,7 @@ def create_default_preferences(
 
     preferences = UserPreferences(
         user_id=user_id,
+        ai_name="MindEase",
         reminders_enabled=True,
         daily_checkin_enabled=True,
         journal_prompts_enabled=True,
@@ -92,7 +93,97 @@ def get_or_create_preferences(
 
 
 # ---------------------------------------------------------
-# Update Preferences
+# Get AI Name
+# ---------------------------------------------------------
+
+def get_ai_name(
+    user_id: str,
+) -> str:
+    """
+    Return the user's selected AI companion name.
+
+    If preferences do not exist, default preferences
+    are created automatically.
+    """
+
+    preferences = get_or_create_preferences(
+        user_id
+    )
+
+    return (
+        preferences.ai_name.strip()
+        if preferences.ai_name
+        else "MindEase"
+    )
+
+
+# ---------------------------------------------------------
+# Update AI Name
+# ---------------------------------------------------------
+
+def update_ai_name(
+    user_id: str,
+    ai_name: str,
+) -> UserPreferences:
+    """
+    Update the user's AI companion name.
+
+    Empty names are replaced with the default
+    name 'MindEase'.
+    """
+
+    ai_name = ai_name.strip()
+
+    if not ai_name:
+        ai_name = "MindEase"
+
+    # Keep the name within the database limit.
+    ai_name = ai_name[:50]
+
+    with get_db() as db:
+
+        statement = (
+            select(UserPreferences)
+            .where(
+                UserPreferences.user_id == user_id
+            )
+        )
+
+        preferences = db.scalar(statement)
+
+        # -------------------------------------------------
+        # Create preferences if missing
+        # -------------------------------------------------
+
+        if preferences is None:
+
+            preferences = UserPreferences(
+                user_id=user_id,
+                ai_name=ai_name,
+                reminders_enabled=True,
+                daily_checkin_enabled=True,
+                journal_prompts_enabled=True,
+            )
+
+            db.add(preferences)
+
+        # -------------------------------------------------
+        # Update existing preferences
+        # -------------------------------------------------
+
+        else:
+
+            preferences.ai_name = ai_name
+
+        db.commit()
+
+        db.refresh(preferences)
+
+        return preferences
+
+
+# ---------------------------------------------------------
+# Update All Preferences
 # ---------------------------------------------------------
 
 def update_preferences(
@@ -105,6 +196,10 @@ def update_preferences(
     Update the user's application preferences.
 
     If preferences do not exist, they are created first.
+
+    Note:
+    The AI companion name is handled separately through
+    update_ai_name().
     """
 
     with get_db() as db:
@@ -126,6 +221,7 @@ def update_preferences(
 
             preferences = UserPreferences(
                 user_id=user_id,
+                ai_name="MindEase",
                 reminders_enabled=reminders_enabled,
                 daily_checkin_enabled=(
                     daily_checkin_enabled
