@@ -168,11 +168,10 @@ def show_dashboard():
         if st.button(
             "👤 Profile",
             use_container_width=True,
-            key="sidebar_profile",
+            key="dashboard_sidebar_profile",
         ):
-            st.info(
-                "Profile is coming soon."
-            )
+
+            navigate("profile")
 
         # -----------------------------------------------------
         # Settings
