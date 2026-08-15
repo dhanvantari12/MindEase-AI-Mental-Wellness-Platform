@@ -10,6 +10,11 @@ from ui.navigation import navigate
 from utils.session import is_logged_in
 from ui.components.logout_button import logout_button
 
+from features.preferences.services import (
+    get_or_create_preferences,
+    update_preferences,
+)
+
 
 def show_settings_page():
     """Display the MindEase settings page."""
@@ -36,6 +41,26 @@ def show_settings_page():
     user_email = st.session_state.get(
         "user_email",
         "",
+    )
+
+    user_id = st.session_state.get(
+        "user_id",
+    )
+
+    if not user_id:
+
+        st.error(
+            "User session not found. Please login again."
+        )
+
+        return
+
+    # ---------------------------------------------------------
+    # Load preferences from database
+    # ---------------------------------------------------------
+
+    preferences = get_or_create_preferences(
+        user_id
     )
 
     # ---------------------------------------------------------
@@ -76,25 +101,29 @@ def show_settings_page():
 
     st.write("")
 
+    st.divider()
+
     # ---------------------------------------------------------
-    # Reminder Preferences
+    # Preference Form
     # ---------------------------------------------------------
 
     st.subheader(
-        "🔔 Reminder Preferences"
+        "🌸 Wellness Preferences"
     )
+
+    st.caption(
+        "Choose which MindEase features you would like "
+        "to use."
+    )
+
+    # ---------------------------------------------------------
+    # Reminder Preference
+    # ---------------------------------------------------------
 
     reminder_enabled = st.toggle(
-        "Enable wellness reminders",
-        value=st.session_state.get(
-            "reminders_enabled",
-            True,
-        ),
+        "🔔 Enable wellness reminders",
+        value=preferences.reminders_enabled,
         key="settings_reminders_toggle",
-    )
-
-    st.session_state.reminders_enabled = (
-        reminder_enabled
     )
 
     if reminder_enabled:
@@ -109,54 +138,57 @@ def show_settings_page():
             "🔕 Wellness reminders are disabled."
         )
 
-    st.divider()
+    st.write("")
 
     # ---------------------------------------------------------
-    # Wellness Preferences
+    # Daily Check-in
     # ---------------------------------------------------------
-
-    st.subheader(
-        "🌸 Wellness Preferences"
-    )
 
     daily_checkin = st.toggle(
-        "Daily mood check-in",
-        value=st.session_state.get(
-            "daily_checkin_enabled",
-            True,
-        ),
+        "😊 Daily mood check-in",
+        value=preferences.daily_checkin_enabled,
         key="settings_daily_checkin_toggle",
     )
 
-    st.session_state.daily_checkin_enabled = (
-        daily_checkin
-    )
+    # ---------------------------------------------------------
+    # Journal Prompts
+    # ---------------------------------------------------------
 
     journal_prompt = st.toggle(
-        "Journal prompts",
-        value=st.session_state.get(
-            "journal_prompts_enabled",
-            True,
-        ),
+        "📔 Journal prompts",
+        value=preferences.journal_prompts_enabled,
         key="settings_journal_prompt_toggle",
-    )
-
-    st.session_state.journal_prompts_enabled = (
-        journal_prompt
     )
 
     st.write("")
 
-    st.caption(
-        "These preferences currently apply to this "
-        "session. We can persist them in the database "
-        "in a later step."
-    )
+    # ---------------------------------------------------------
+    # Save Preferences
+    # ---------------------------------------------------------
+
+    if st.button(
+        "💾 Save Preferences",
+        use_container_width=True,
+        key="settings_save_preferences",
+    ):
+
+        update_preferences(
+            user_id=user_id,
+            reminders_enabled=reminder_enabled,
+            daily_checkin_enabled=daily_checkin,
+            journal_prompts_enabled=journal_prompt,
+        )
+
+        st.success(
+            "✅ Your preferences have been saved successfully!"
+        )
+
+        st.rerun()
 
     st.divider()
 
     # ---------------------------------------------------------
-    # Security
+    # Security / Account
     # ---------------------------------------------------------
 
     st.subheader(
@@ -164,24 +196,14 @@ def show_settings_page():
     )
 
     st.info(
-        "Password management will be added in a "
-        "future security update."
+        "Your account information and preferences "
+        "are securely stored in the MindEase database."
     )
 
     st.write("")
 
-    if st.button(
-        "👤 View Profile",
-        use_container_width=True,
-        key="settings_profile_button",
-    ):
-
-        navigate("profile")
-
-    st.divider()
-
     # ---------------------------------------------------------
-    # Navigation
+    # Sidebar Navigation
     # ---------------------------------------------------------
 
     with st.sidebar:
@@ -196,6 +218,8 @@ def show_settings_page():
 
         st.divider()
 
+        # Dashboard
+
         if st.button(
             "🏠 Dashboard",
             use_container_width=True,
@@ -203,6 +227,8 @@ def show_settings_page():
         ):
 
             navigate("dashboard")
+
+        # Safe Space
 
         if st.button(
             "💬 Safe Space",
@@ -212,6 +238,8 @@ def show_settings_page():
 
             navigate("safe_space")
 
+        # Mood Tracker
+
         if st.button(
             "😊 Mood Tracker",
             use_container_width=True,
@@ -219,6 +247,8 @@ def show_settings_page():
         ):
 
             navigate("mood")
+
+        # Journal
 
         if st.button(
             "📔 Journal",
@@ -228,6 +258,8 @@ def show_settings_page():
 
             navigate("journal")
 
+        # Reminders
+
         if st.button(
             "🔔 Reminders",
             use_container_width=True,
@@ -236,6 +268,8 @@ def show_settings_page():
 
             navigate("reminders")
 
+        # Insights
+
         if st.button(
             "💡 Insights",
             use_container_width=True,
@@ -243,6 +277,8 @@ def show_settings_page():
         ):
 
             navigate("insights")
+
+        # Statistics
 
         if st.button(
             "📊 Statistics",
@@ -254,6 +290,8 @@ def show_settings_page():
 
         st.divider()
 
+        # Profile
+
         if st.button(
             "👤 Profile",
             use_container_width=True,
@@ -261,6 +299,8 @@ def show_settings_page():
         ):
 
             navigate("profile")
+
+        # Settings
 
         if st.button(
             "⚙️ Settings",
@@ -271,6 +311,8 @@ def show_settings_page():
             st.rerun()
 
         st.divider()
+
+        # Logout
 
         logout_button()
 
