@@ -180,11 +180,10 @@ def show_dashboard():
         if st.button(
             "⚙️ Settings",
             use_container_width=True,
-            key="sidebar_settings",
+            key="dashboard_sidebar_settings",
         ):
-            st.info(
-                "Settings are coming soon."
-            )
+
+            navigate("settings")
 
         st.divider()
 
