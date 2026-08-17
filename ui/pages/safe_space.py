@@ -2,8 +2,9 @@
 Safe Space page for MindEase.
 
 Provides a supportive AI conversation interface
-with persistent conversation history and
-personalized AI companion name.
+with persistent conversation history,
+personalized AI companion name, and
+long-term user memory.
 """
 
 import streamlit as st
@@ -31,26 +32,37 @@ def show_safe_space_page():
     # ---------------------------------------------------------
 
     if not is_logged_in():
-        st.error("Please login first.")
+
+        st.error(
+            "Please login first."
+        )
+
         return
 
     # ---------------------------------------------------------
     # Current user
     # ---------------------------------------------------------
 
-    user_id = st.session_state.get("user_id")
+    user_id = st.session_state.get(
+        "user_id"
+    )
 
     if not user_id:
+
         st.error(
             "User session not found. Please login again."
         )
+
         return
 
     # ---------------------------------------------------------
     # Get personalized AI companion name
     # ---------------------------------------------------------
 
-    ai_name = get_ai_name(user_id) or "MindEase"
+    ai_name = (
+        get_ai_name(user_id)
+        or "MindEase"
+    )
 
     # ---------------------------------------------------------
     # Page Header
@@ -71,7 +83,9 @@ def show_safe_space_page():
     # Load conversation history
     # ---------------------------------------------------------
 
-    messages = get_conversation(user_id)
+    messages = get_conversation(
+        user_id
+    )
 
     # ---------------------------------------------------------
     # Welcome message
@@ -82,8 +96,8 @@ def show_safe_space_page():
         st.info(
             f"🌸 Welcome to Safe Space.\n\n"
             f"I'm {ai_name}, your personal wellness "
-            f"companion. I'm here to listen without "
-            f"judgment."
+            "companion. I'm here to listen without "
+            "judgment."
         )
 
     # ---------------------------------------------------------
@@ -92,9 +106,13 @@ def show_safe_space_page():
 
     for message in messages:
 
-        with st.chat_message(message.role):
+        with st.chat_message(
+            message.role
+        ):
 
-            st.markdown(message.content)
+            st.markdown(
+                message.content
+            )
 
     # ---------------------------------------------------------
     # Chat input
@@ -122,7 +140,9 @@ def show_safe_space_page():
 
         with st.chat_message("user"):
 
-            st.markdown(user_message)
+            st.markdown(
+                user_message
+            )
 
         # -----------------------------------------------------
         # Generate AI response
@@ -137,7 +157,8 @@ def show_safe_space_page():
                 try:
 
                     response = generate_response(
-                        user_message,
+                        user_message=user_message,
+                        user_id=user_id,
                         ai_name=ai_name,
                     )
 
@@ -153,7 +174,9 @@ def show_safe_space_page():
                         f"Safe Space error: {error}"
                     )
 
-            st.markdown(response)
+            st.markdown(
+                response
+            )
 
         # -----------------------------------------------------
         # Save AI response
@@ -191,7 +214,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_dashboard",
         ):
 
-            navigate("dashboard")
+            navigate(
+                "dashboard"
+            )
 
         # -----------------------------------------------------
         # Safe Space
@@ -203,7 +228,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_safe_space",
         ):
 
-            navigate("safe_space")
+            navigate(
+                "safe_space"
+            )
 
         # -----------------------------------------------------
         # Mood Tracker
@@ -215,7 +242,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_mood",
         ):
 
-            navigate("mood")
+            navigate(
+                "mood"
+            )
 
         # -----------------------------------------------------
         # Journal
@@ -227,7 +256,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_journal",
         ):
 
-            navigate("journal")
+            navigate(
+                "journal"
+            )
 
         # -----------------------------------------------------
         # Reminders
@@ -239,7 +270,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_reminders",
         ):
 
-            navigate("reminders")
+            navigate(
+                "reminders"
+            )
 
         # -----------------------------------------------------
         # Insights
@@ -251,7 +284,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_insights",
         ):
 
-            navigate("insights")
+            navigate(
+                "insights"
+            )
 
         # -----------------------------------------------------
         # Statistics
@@ -263,7 +298,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_statistics",
         ):
 
-            navigate("statistics")
+            navigate(
+                "statistics"
+            )
 
         st.divider()
 
@@ -277,7 +314,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_profile",
         ):
 
-            navigate("profile")
+            navigate(
+                "profile"
+            )
 
         # -----------------------------------------------------
         # Settings
@@ -289,7 +328,9 @@ def show_safe_space_page():
             key="safe_space_sidebar_settings",
         ):
 
-            navigate("settings")
+            navigate(
+                "settings"
+            )
 
         st.divider()
 
@@ -303,7 +344,9 @@ def show_safe_space_page():
             key="safe_space_clear_conversation",
         ):
 
-            clear_conversation(user_id)
+            clear_conversation(
+                user_id
+            )
 
             st.success(
                 "Conversation cleared."
@@ -323,7 +366,9 @@ def show_safe_space_page():
             key="safe_space_back_dashboard",
         ):
 
-            navigate("dashboard")
+            navigate(
+                "dashboard"
+            )
 
     # ---------------------------------------------------------
     # Footer

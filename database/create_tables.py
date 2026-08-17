@@ -16,6 +16,7 @@ from models.journal import Journal  # noqa: F401
 from models.login_session import LoginSession  # noqa: F401
 from models.reminder import Reminder  # noqa: F401
 from models.user_preferences import UserPreferences  # noqa: F401
+from models.ai_memory import AIMemory  # noqa: F401
 
 
 def create_database() -> None:
