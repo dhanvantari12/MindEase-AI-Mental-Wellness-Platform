@@ -14,6 +14,10 @@ from features.journal.services import (
 from ui.navigation import navigate
 from utils.session import is_logged_in
 
+from features.journal.pdf_export import (
+    export_journal_pdf,
+)
+
 
 def show_journal_page():
     """Display the MindEase journal page."""
@@ -383,7 +387,47 @@ def show_journal_page():
                             st.error(
                                 "Unable to delete this entry."
                             )
+    
+    # ---------------------------------------------------------
+    # Export Journal PDF
+    # ---------------------------------------------------------
 
+    st.divider()
+
+    st.subheader(
+        "📄 Export Journal"
+    )
+
+    st.caption(
+        "Download all your journal entries as a PDF."
+    )
+
+    if st.button(
+        "📥 Generate Journal PDF",
+        use_container_width=True,
+    ):
+
+        pdf_path = (
+            "storage/journal_export.pdf"
+        )
+
+        export_journal_pdf(
+            user_id,
+            pdf_path,
+        )
+
+        with open(
+            pdf_path,
+            "rb",
+        ) as pdf_file:
+
+            st.download_button(
+                label="⬇ Download PDF",
+                data=pdf_file,
+                file_name="MindEase_Journal.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
     # ---------------------------------------------------------
     # Back to Dashboard
     # ---------------------------------------------------------
@@ -401,3 +445,5 @@ def show_journal_page():
         )
 
         navigate("dashboard")
+        
+
