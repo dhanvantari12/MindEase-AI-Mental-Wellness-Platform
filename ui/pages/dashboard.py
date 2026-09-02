@@ -180,6 +180,12 @@ def show_dashboard():
            key="dashboard_sidebar_memory",):
            navigate("memory")
 
+        if st.button(
+            "📋 Weekly Report",
+            use_container_width=True,
+            key="dashboard_sidebar_reports",
+        ):
+            navigate("reports")
         # -----------------------------------------------------
         # Settings
         # -----------------------------------------------------

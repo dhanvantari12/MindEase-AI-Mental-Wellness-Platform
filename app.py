@@ -51,6 +51,10 @@ from ui.pages.profile import show_profile_page
 from ui.pages.settings import show_settings_page
 from ui.pages.memory import show_memory_page
 
+from ui.pages.reports import (
+    show_reports_page,
+)
+
 # ---------------------------------------------------------
 # Page Routing
 # ---------------------------------------------------------
@@ -111,3 +115,6 @@ elif st.session_state.page == "settings":
     
 elif st.session_state.page == "memory":
     show_memory_page()
+
+elif st.session_state.page == "reports":
+    show_reports_page()
