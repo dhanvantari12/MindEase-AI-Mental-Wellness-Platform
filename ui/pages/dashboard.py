@@ -173,6 +173,12 @@ def show_dashboard():
         ):
 
             navigate("profile")
+            
+        if st.button(
+           "🧠 AI Memory",
+           use_container_width=True,
+           key="dashboard_sidebar_memory",):
+           navigate("memory")
 
         # -----------------------------------------------------
         # Settings
