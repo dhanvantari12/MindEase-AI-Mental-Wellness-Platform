@@ -5,6 +5,7 @@ Handles:
 - Gemini AI responses
 - Personalized AI companion names
 - Long-term AI memory/context
+- Conversation context
 - Saving conversation messages
 - Retrieving conversation history
 - Clearing conversation history
@@ -20,6 +21,10 @@ from database.session import get_db
 from models.conversation import Conversation
 
 from features.ai.context import build_ai_context
+
+from features.ai.memory_extractor import (
+    extract_memories_from_message
+)
 
 
 # ---------------------------------------------------------
@@ -89,31 +94,75 @@ and reasonably concise.
 
 
 # ---------------------------------------------------------
+# Build Conversation Context
+# ---------------------------------------------------------
+
+def build_conversation_context(
+    user_id: str,
+    limit: int = 10,
+) -> str:
+    """
+    Return the last few conversation messages
+    as context for Gemini.
+    """
+
+    messages = get_conversation(user_id)
+
+    if not messages:
+
+        return "No previous conversation."
+
+    recent_messages = messages[-limit:]
+
+    lines = []
+
+    for message in recent_messages:
+
+        role = (
+            "User"
+            if message.role == "user"
+            else "Assistant"
+        )
+
+        lines.append(
+            f"{role}: {message.content}"
+        )
+
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------
 # Generate Gemini Response
 # ---------------------------------------------------------
 
 def generate_response(
-    user_message: str,
     user_id: str,
+    user_message: str,
     ai_name: str = "MindEase",
 ) -> str:
     """
     Generate a personalized AI response using Gemini.
-
-    The AI receives:
-    - The user's current message
-    - The personalized AI companion name
-    - Long-term user memories
     """
 
     try:
 
         # -------------------------------------------------
-        # Build personalized AI context
+        # Long-term memory context
         # -------------------------------------------------
 
         ai_context = build_ai_context(
             user_id
+        )
+
+        # -------------------------------------------------
+        # Recent conversation context
+        # -------------------------------------------------
+
+        conversation_context = (
+            build_conversation_context(
+                user_id=user_id,
+                limit=10,
+            )
         )
 
         # -------------------------------------------------
@@ -130,6 +179,12 @@ PERSONALIZED AI CONTEXT
 {ai_context}
 
 --------------------------------------------------
+RECENT CONVERSATION
+--------------------------------------------------
+
+{conversation_context}
+
+--------------------------------------------------
 AI COMPANION NAME
 --------------------------------------------------
 
@@ -141,24 +196,20 @@ Always understand that when the user addresses you
 as "{ai_name}", they are referring to you.
 
 Use the name naturally when appropriate.
-Do not unnecessarily repeat your name in every response.
 
 --------------------------------------------------
 IMPORTANT MEMORY RULES
 --------------------------------------------------
 
-The long-term memories above are information about
-the user that may help personalize your responses.
+Use long-term memories only when relevant.
 
-Use them only when relevant.
-
-Do not reveal the memory system itself unless the
-user explicitly asks about what you remember.
+Use recent conversation history to maintain
+continuity and avoid repeating questions.
 
 Do not invent memories.
 
-If the context says there are no memories, simply
-respond normally without mentioning that fact.
+Do not reveal the memory system unless the user
+asks what you remember.
 
 --------------------------------------------------
 CURRENT USER MESSAGE
@@ -168,7 +219,7 @@ CURRENT USER MESSAGE
 """
 
         # -------------------------------------------------
-        # Generate Gemini response
+        # Gemini Request
         # -------------------------------------------------
 
         response = client.models.generate_content(
@@ -180,7 +231,7 @@ CURRENT USER MESSAGE
         )
 
         # -------------------------------------------------
-        # Validate response
+        # Validate Response
         # -------------------------------------------------
 
         if response.text:
@@ -188,8 +239,8 @@ CURRENT USER MESSAGE
             return response.text.strip()
 
         return (
-            f"I'm here with you. "
-            f"Could you tell me a little more?"
+            "I'm here with you. "
+            "Could you tell me a little more?"
         )
 
     except Exception as error:
@@ -199,9 +250,9 @@ CURRENT USER MESSAGE
         )
 
         return (
-            f"I'm sorry, but I'm having trouble "
-            f"responding right now. Please try again "
-            f"in a moment."
+            "I'm sorry, but I'm having trouble "
+            "responding right now. Please try again "
+            "in a moment."
         )
 
 
@@ -215,10 +266,23 @@ def save_message(
     content: str,
 ) -> Conversation:
     """
-    Save a Safe Space conversation message
-    to the database.
+    Save a Safe Space conversation message.
     """
+    if role == "user":
 
+       try:
+
+        extract_memories_from_message(
+            user_id,
+            content
+        )
+
+       except Exception as error:
+
+        print(
+            f"Memory extraction error: {error}"
+        )
+        
     message = Conversation(
         user_id=user_id,
         role=role,
@@ -244,10 +308,7 @@ def get_conversation(
     user_id: str,
 ) -> list[Conversation]:
     """
-    Return all Safe Space messages for a user.
-
-    Messages are returned from oldest
-    to newest.
+    Return all conversation messages.
     """
 
     with get_db() as db:
@@ -275,8 +336,7 @@ def clear_conversation(
     user_id: str,
 ) -> None:
     """
-    Delete all Safe Space messages
-    belonging to a user.
+    Delete all conversation messages.
     """
 
     with get_db() as db:
@@ -294,8 +354,6 @@ def clear_conversation(
 
         for message in messages:
 
-            db.delete(
-                message
-            )
+            db.delete(message)
 
         db.commit()

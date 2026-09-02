@@ -11,6 +11,9 @@ from datetime import datetime, timedelta
 from features.mood.services import get_user_moods
 from features.journal.services import get_user_journal_entries
 
+from features.ai.context import build_ai_context
+from features.ai.memory import get_user_memories
+
 
 # ---------------------------------------------------------
 # Mood Analysis
@@ -324,4 +327,126 @@ def get_user_insights(user_id: str) -> dict:
         "journal_summary": journal_summary,
         "wellness_score": wellness_score,
         "insights": insights,
-    }
+        "ai_summary": generate_ai_wellness_summary(
+            user_id
+    ),
+}
+    
+# ---------------------------------------------------------
+# AI Wellness Summary
+# ---------------------------------------------------------
+
+def generate_ai_wellness_summary(
+    user_id: str,
+) -> str:
+    """
+    Generate a personalized wellness summary
+    using the user's activity and memories.
+    """
+
+    mood_summary = get_mood_summary(
+        user_id
+    )
+
+    journal_summary = get_journal_summary(
+        user_id
+    )
+
+    wellness_score = calculate_wellness_score(
+        user_id
+    )
+
+    memories = get_user_memories(
+        user_id
+    )
+
+    summary = []
+
+    # -----------------------------------------------------
+    # Wellness Score
+    # -----------------------------------------------------
+
+    summary.append(
+        f"Current Wellness Score: {wellness_score}/100"
+    )
+
+    # -----------------------------------------------------
+    # Mood Activity
+    # -----------------------------------------------------
+
+    if mood_summary["total_checkins"] > 0:
+
+        summary.append(
+            f"You have recorded "
+            f"{mood_summary['total_checkins']} mood check-ins."
+        )
+
+        if mood_summary["most_common_mood"]:
+
+            summary.append(
+                f"Your most common mood is "
+                f"{mood_summary['most_common_mood']}."
+            )
+
+    else:
+
+        summary.append(
+            "You have not recorded any moods yet."
+        )
+
+    # -----------------------------------------------------
+    # Journal Activity
+    # -----------------------------------------------------
+
+    if journal_summary["total_entries"] > 0:
+
+        summary.append(
+            f"You have written "
+            f"{journal_summary['total_entries']} journal entries."
+        )
+
+    else:
+
+        summary.append(
+            "You have not written any journal entries yet."
+        )
+
+    # -----------------------------------------------------
+    # AI Memory Reflection
+    # -----------------------------------------------------
+
+    if memories:
+
+        summary.append(
+            "Things I remember about your journey:"
+        )
+
+        for memory in memories[:5]:
+
+            summary.append(
+                f"• {memory.content}"
+            )
+
+    # -----------------------------------------------------
+    # Encouragement
+    # -----------------------------------------------------
+
+    if wellness_score >= 80:
+
+        summary.append(
+            "You're showing excellent engagement with your wellness habits."
+        )
+
+    elif wellness_score >= 50:
+
+        summary.append(
+            "You're building positive wellness habits. Keep going."
+        )
+
+    else:
+
+        summary.append(
+            "Small daily actions can create meaningful progress."
+        )
+
+    return "\n".join(summary)
