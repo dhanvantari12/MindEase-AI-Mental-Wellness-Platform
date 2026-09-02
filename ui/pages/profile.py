@@ -14,7 +14,7 @@ from models.user import User
 
 from features.mood.services import get_user_moods
 from features.journal.services import get_user_journal_entries
-from features.reminders.services import get_user_reminders
+from features.reminders.services import calculate_streak
 from features.insights.services import calculate_wellness_score
 
 from ui.navigation import navigate
@@ -80,7 +80,7 @@ def show_profile_page():
         user_id
     )
 
-    reminders = get_user_reminders(
+    streak = calculate_streak(
         user_id
     )
 
@@ -262,8 +262,8 @@ def show_profile_page():
     with stat_col3:
 
         st.metric(
-            label="🔔 Reminders",
-            value=len(reminders),
+            label="🔥 Streak",
+            value=streak,
         )
 
     with stat_col4:

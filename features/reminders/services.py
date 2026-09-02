@@ -1,288 +1,169 @@
 """
-Reminder services for MindEase.
+Reminder and Daily Check-In services.
 
-Handles creating, retrieving, updating, completing,
-and deleting reminders for users.
+Handles:
+- Morning mood check-ins
+- Night reflections
+- Daily streaks
 """
 
-from datetime import datetime
+from datetime import date, timedelta
 
 from sqlalchemy import select
 
 from database.session import get_db
-from models.reminder import Reminder
+from models.daily_checkin import DailyCheckIn
 
 
-def create_reminder(
+# ---------------------------------------------------------
+# Get Today's Check-In
+# ---------------------------------------------------------
+
+def get_today_checkin(
     user_id: str,
-    title: str,
-    reminder_time: datetime,
-    description: str | None = None,
-) -> Reminder:
-    """
-    Create and save a new reminder.
-    """
+) -> DailyCheckIn | None:
 
-    reminder = Reminder(
-        user_id=user_id,
-        title=title.strip(),
-        description=(
-            description.strip()
-            if description
-            else None
-        ),
-        reminder_time=reminder_time,
-        completed=False,
-    )
-
-    with get_db() as db:
-
-        db.add(reminder)
-
-        db.commit()
-
-        db.refresh(reminder)
-
-        return reminder
-
-
-def get_user_reminders(
-    user_id: str,
-) -> list[Reminder]:
-    """
-    Return all reminders belonging to a user.
-
-    Newest reminder times are returned first.
-    """
+    today = date.today()
 
     with get_db() as db:
 
         statement = (
-            select(Reminder)
+            select(DailyCheckIn)
             .where(
-                Reminder.user_id == user_id
-            )
-            .order_by(
-                Reminder.reminder_time.asc()
-            )
-        )
-
-        return list(
-            db.scalars(statement).all()
-        )
-
-
-def get_pending_reminders(
-    user_id: str,
-) -> list[Reminder]:
-    """
-    Return incomplete reminders for a user.
-
-    Reminders are ordered by their scheduled time.
-    """
-
-    with get_db() as db:
-
-        statement = (
-            select(Reminder)
-            .where(
-                Reminder.user_id == user_id,
-                Reminder.completed.is_(False),
-            )
-            .order_by(
-                Reminder.reminder_time.asc()
-            )
-        )
-
-        return list(
-            db.scalars(statement).all()
-        )
-
-
-def get_completed_reminders(
-    user_id: str,
-) -> list[Reminder]:
-    """
-    Return completed reminders for a user.
-    """
-
-    with get_db() as db:
-
-        statement = (
-            select(Reminder)
-            .where(
-                Reminder.user_id == user_id,
-                Reminder.completed.is_(True),
-            )
-            .order_by(
-                Reminder.reminder_time.desc()
-            )
-        )
-
-        return list(
-            db.scalars(statement).all()
-        )
-
-
-def get_reminder_by_id(
-    reminder_id: str,
-    user_id: str,
-) -> Reminder | None:
-    """
-    Return a specific reminder belonging to a user.
-    """
-
-    with get_db() as db:
-
-        statement = (
-            select(Reminder)
-            .where(
-                Reminder.id == reminder_id,
-                Reminder.user_id == user_id,
+                DailyCheckIn.user_id == user_id,
+                DailyCheckIn.checkin_date == today,
             )
         )
 
         return db.scalar(statement)
 
 
-def mark_reminder_completed(
-    reminder_id: str,
-    user_id: str,
-) -> bool:
-    """
-    Mark a reminder as completed.
+# ---------------------------------------------------------
+# Save Morning Mood
+# ---------------------------------------------------------
 
-    Returns True if successful, otherwise False.
-    """
+def save_morning_checkin(
+    user_id: str,
+    mood: str,
+) -> DailyCheckIn:
+
+    today = date.today()
 
     with get_db() as db:
 
         statement = (
-            select(Reminder)
+            select(DailyCheckIn)
             .where(
-                Reminder.id == reminder_id,
-                Reminder.user_id == user_id,
+                DailyCheckIn.user_id == user_id,
+                DailyCheckIn.checkin_date == today,
             )
         )
 
-        reminder = db.scalar(statement)
+        checkin = db.scalar(statement)
 
-        if reminder is None:
-            return False
+        if checkin is None:
 
-        reminder.completed = True
+            checkin = DailyCheckIn(
+                user_id=user_id,
+                checkin_date=today,
+                morning_mood=mood,
+            )
+
+            db.add(checkin)
+
+        else:
+
+            checkin.morning_mood = mood
 
         db.commit()
+        db.refresh(checkin)
 
-        return True
+        return checkin
 
 
-def mark_reminder_pending(
-    reminder_id: str,
+# ---------------------------------------------------------
+# Save Night Reflection
+# ---------------------------------------------------------
+
+def save_night_reflection(
     user_id: str,
-) -> bool:
-    """
-    Mark a completed reminder as pending again.
+    reflection: str,
+) -> DailyCheckIn:
 
-    Returns True if successful, otherwise False.
-    """
+    today = date.today()
 
     with get_db() as db:
 
         statement = (
-            select(Reminder)
+            select(DailyCheckIn)
             .where(
-                Reminder.id == reminder_id,
-                Reminder.user_id == user_id,
+                DailyCheckIn.user_id == user_id,
+                DailyCheckIn.checkin_date == today,
             )
         )
 
-        reminder = db.scalar(statement)
+        checkin = db.scalar(statement)
 
-        if reminder is None:
-            return False
+        if checkin is None:
 
-        reminder.completed = False
+            checkin = DailyCheckIn(
+                user_id=user_id,
+                checkin_date=today,
+                night_reflection=reflection,
+            )
+
+            db.add(checkin)
+
+        else:
+
+            checkin.night_reflection = reflection
 
         db.commit()
+        db.refresh(checkin)
 
-        return True
+        return checkin
 
 
-def update_reminder(
-    reminder_id: str,
+# ---------------------------------------------------------
+# Calculate Daily Streak
+# ---------------------------------------------------------
+
+def calculate_streak(
     user_id: str,
-    title: str,
-    reminder_time: datetime,
-    description: str | None = None,
-) -> Reminder | None:
-    """
-    Update an existing reminder.
-
-    Returns the updated reminder,
-    or None if it does not exist.
-    """
+) -> int:
 
     with get_db() as db:
 
         statement = (
-            select(Reminder)
+            select(DailyCheckIn)
             .where(
-                Reminder.id == reminder_id,
-                Reminder.user_id == user_id,
+                DailyCheckIn.user_id == user_id
+            )
+            .order_by(
+                DailyCheckIn.checkin_date.desc()
             )
         )
 
-        reminder = db.scalar(statement)
-
-        if reminder is None:
-            return None
-
-        reminder.title = title.strip()
-
-        reminder.description = (
-            description.strip()
-            if description
-            else None
+        checkins = list(
+            db.scalars(statement).all()
         )
 
-        reminder.reminder_time = reminder_time
+    if not checkins:
+        return 0
 
-        db.commit()
+    dates = {
+        c.checkin_date
+        for c in checkins
+    }
 
-        db.refresh(reminder)
+    streak = 0
 
-        return reminder
+    current_day = date.today()
 
+    while current_day in dates:
 
-def delete_reminder(
-    reminder_id: str,
-    user_id: str,
-) -> bool:
-    """
-    Delete a reminder belonging to a user.
+        streak += 1
 
-    Returns True if deleted,
-    otherwise False.
-    """
+        current_day -= timedelta(days=1)
 
-    with get_db() as db:
-
-        statement = (
-            select(Reminder)
-            .where(
-                Reminder.id == reminder_id,
-                Reminder.user_id == user_id,
-            )
-        )
-
-        reminder = db.scalar(statement)
-
-        if reminder is None:
-            return False
-
-        db.delete(reminder)
-
-        db.commit()
-
-        return True
+    return streak

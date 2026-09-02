@@ -186,6 +186,12 @@ def show_dashboard():
             key="dashboard_sidebar_reports",
         ):
             navigate("reports")
+            
+        if st.button(
+            "🌞 Daily Check-In",
+            use_container_width=True,
+        ):
+            navigate("checkins")
         # -----------------------------------------------------
         # Settings
         # -----------------------------------------------------

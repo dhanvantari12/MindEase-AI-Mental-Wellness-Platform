@@ -4,6 +4,7 @@ MindEase Application Entry Point.
 
 import streamlit as st
 
+from features.auth import page
 from ui.navigation import initialize_navigation
 from utils.session import restore_session
 
@@ -55,6 +56,9 @@ from ui.pages.reports import (
     show_reports_page,
 )
 
+from ui.pages.checkins import (
+    show_checkins_page,
+)
 # ---------------------------------------------------------
 # Page Routing
 # ---------------------------------------------------------
@@ -118,3 +122,6 @@ elif st.session_state.page == "memory":
 
 elif st.session_state.page == "reports":
     show_reports_page()
+    
+elif st.session_state.page == "checkins":
+    show_checkins_page()
