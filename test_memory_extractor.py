@@ -30,8 +30,9 @@ memories = get_user_memories(
 print("\nMEMORIES:\n")
 
 for memory in memories:
-
-    print(
-        f"[{memory.category}] "
-        f"{memory.content}"
-    )
+       
+        print(
+                f"[{memory.category}] "
+                f"{memory.content}"
+            )
+    
